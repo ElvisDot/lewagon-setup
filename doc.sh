@@ -202,7 +202,8 @@ function check_brew() {
 		then
 			# shellcheck disable=SC2016
 			echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-			exec zsh
+			eval "$(/opt/homebrew/bin/brew shellenv)"
+			warning "Warning: please restart your terminal for brew to work"
 		fi
 	fi
 }
