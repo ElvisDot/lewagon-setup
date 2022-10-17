@@ -214,9 +214,13 @@ function check_brew() {
 		# brew found in path all good
 		return
 	fi
-	# todo: check architecture
-	if [ -f /opt/homebrew/bin/brew ]
+	if is_arm
 	then
+		if [ ! -f /opt/homebrew/bin/brew ]
+		then
+			/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+		fi
+
 		# brew is installed but not in path
 		if ! grep 'opt/homebrew' ~/.zprofile
 		then
@@ -225,8 +229,14 @@ function check_brew() {
 			eval "$(/opt/homebrew/bin/brew shellenv)"
 			warning "Warning: please restart your terminal for brew to work"
 		fi
-	else
-		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+	else # x86
+		if [ ! -f /usr/local/bin/brew ]
+		then
+			/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+		fi
+
+		# x86 should not have path issues and even if
+		# its not that common since all new macs are arm
 	fi
 }
 
