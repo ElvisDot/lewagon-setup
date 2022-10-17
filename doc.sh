@@ -322,7 +322,7 @@ function check_shell() {
 	else
 		if [ -x "$(command -v zsh)" ]
 		then
-			chsh -s "$(which zsh)"
+			chsh -s "$(command -v zsh)"
 		else
 			error "Error: did not find zsh"
 			if is_ubuntu
