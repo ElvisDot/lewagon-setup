@@ -14,8 +14,8 @@ _color_WHITE="\e[1;37m"
 
 # _color_black="\e[0;30m"
 _color_red="\e[0;31m"
-# _color_green="\e[0;32m"
-# _color_yellow="\e[0;33m"
+_color_green="\e[0;32m"
+_color_yellow="\e[0;33m"
 # _color_blue="\e[0;34m"
 # _color_magenta="\e[0;35m"
 # _color_cyan="\e[0;36m"
@@ -35,15 +35,15 @@ function check_colors() {
 }
 
 function error() {
-	printf '%b[%b-%b]%b %s\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$1"
+	printf '%b[%b-%b]%b %s%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$1" "$_color_RESET"
 }
 
 function warn() {
-	printf '%b[%b!%b]%b %s\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_RESET" "$1"
+	printf '%b[%b!%b]%b %s%b\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$1" "$_color_RESET"
 }
 
 function log() {
-	printf '%b[*]%b %s\n' "$_color_WHITE" "$_color_RESET" "$1"
+	printf '%b[*]%b %b\n' "$_color_WHITE" "$_color_RESET" "$1"
 }
 
 function okay() {
@@ -51,19 +51,26 @@ function okay() {
 }
 
 function check_internet() {
-	if ping 8.8.8.8 -c1 -w1 &>/dev/null
-	then
-		return
-	fi
+	local ip
+	# Even the stable LeWagon munich office had a hiccup for 8.8.8.8
+	# So give it some attempts
+	local ips=(8.8.8.8 8.8.4.4 1.1.1.1)
+	for ip in "${ips[@]}"
+	do
+		if ping "$ip" -c1 -w1 &>/dev/null
+		then
+			return
+		fi
+	done
 	error "Error: could not ping 8.8.8.8 is your internet working?"
 	exit 1
 }
 
 function check_dns() {
-	local hosts
+	local host
 	# if it can ping either github.com or lewagon.com
 	# dns is working
-	hosts=(github.com lewagon.com)
+	local hosts=(github.com lewagon.com)
 	for host in "${hosts[@]}"
 	do
 		if ping "$host" -c1 -w1 &>/dev/null
@@ -84,6 +91,95 @@ function check_user() {
 	exit 1
 }
 
+function check_brew() {
+	if [ -x "$(command -v brew)" ]
+	then
+		# brew found in path all good
+		return
+	fi
+	# todo: check architecture
+	if [ -f /opt/homebrew/bin/brew ]
+	then
+		# brew is installed but not in path
+		if ! grep 'opt/homebrew' ~/.zprofile
+		then
+			# shellcheck disable=SC2016
+			echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+			exec zsh
+		fi
+	fi
+}
+
+detected_os=""
+detected_distro=""
+
+function is_mac() {
+	[[ "$detected_os" == "macOS" ]] && return 0
+	return 1
+}
+function is_linux() {
+	[[ "$detected_os" == "Linux" ]] && return 0
+	return 1
+}
+function is_ubuntu() {
+	[[ "$detected_distro" =~ [Uu]buntu ]] && return 0
+	return 1
+}
+function is_windows() {
+	[[ "$detected_os" == "WSL" ]] && return 0
+	return 1
+}
+
+function device_info() {
+	# os
+	if [[ $OSTYPE == 'darwin'* ]]
+	then
+		detected_os='macOS'
+	elif grep -q Microsoft /proc/version
+	then
+		detected_os='WSL'
+	elif [[ "$(uname)" == "Linux" ]]
+	then
+		detected_os='Linux'
+	else
+		error "Error: failed to detect your operating system"
+		error "       please report this here https://github.com/ElvisDot/lewagon-setup/issues"
+		exit 1
+	fi
+
+	# distro/version
+	if is_mac
+	then
+		detected_distro="$(sw_vers -productVersion)"
+	elif is_linux || is_windows
+	then
+		if [ -n "$(command -v lsb_release)" ]
+		then
+			detected_distro=$(lsb_release -s -d)
+		elif [ -f "/etc/os-release" ]
+		then
+			detected_distro=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | tr -d '="')
+		elif [ -f "/etc/debian_version" ]
+		then
+			detected_distro="Debian $(cat /etc/debian_version)"
+		elif [ -f "/etc/redhat-release" ]
+		then
+			detected_distro=$(cat /etc/redhat-release)
+		else
+			detected_distro="$(uname -s) $(uname -r)"
+		fi
+	else
+		error "Something went wrong"
+		exit 1
+	fi
+	log "Detected $_color_green$detected_os$_color_RESET $detected_distro"
+	if is_linux && ! is_ubuntu
+	then
+		warn "Warning: LeWagon setup recommends Ubuntu"
+		warn "         other distros are fine if you know what you are doing"
+	fi
+}
+
 function check_basics() {
 	check_colors
 	check_internet
@@ -92,7 +188,12 @@ function check_basics() {
 }
 
 function main() {
+	device_info
 	check_basics
+	if is_mac
+	then
+		check_brew
+	fi
 	log "Hi I am the doctor"
 }
 
