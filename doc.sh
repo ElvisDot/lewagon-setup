@@ -225,14 +225,22 @@ function check_brew() {
 			eval "$(/opt/homebrew/bin/brew shellenv)"
 			warning "Warning: please restart your terminal for brew to work"
 		fi
+	else
+		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 	fi
 }
 
 detected_os=""
 detected_distro=""
+mac_version=""
+mac_arch=""
 
 function is_mac() {
 	[[ "$detected_os" == "macOS" ]] && return 0
+	return 1
+}
+function is_arm() {
+	[[ "$mac_arch" =~ arm ]] && return 0
 	return 1
 }
 function is_linux() {
@@ -269,6 +277,8 @@ function device_info() {
 	if is_mac
 	then
 		detected_distro="$(sw_vers -productVersion)"
+		mac_version="$detected_distro"
+		mac_arch="$(arch)"
 	elif is_linux || is_windows
 	then
 		if [ -n "$(command -v lsb_release)" ]
@@ -290,11 +300,19 @@ function device_info() {
 		error "Something went wrong"
 		exit 1
 	fi
-	log "Detected $_color_green$detected_os$_color_RESET $detected_distro"
+	log "Detected $_color_green$detected_os$_color_RESET $detected_distro $(is_arm && echo -e "$_color_green(arm)$_color_RESET")"
 	if is_linux && ! is_ubuntu
 	then
 		warn "Warning: LeWagon setup recommends Ubuntu"
 		warn "         other distros are fine if you know what you are doing"
+	elif is_mac
+	then
+		local mac_major
+		mac_major="${mac_version%%.*}"
+		if [ "$mac_major" -lt "11" ]
+		then
+			warn "Warning: your macOS is outdated please do a update"
+		fi
 	fi
 }
 
