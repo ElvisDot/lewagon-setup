@@ -24,13 +24,17 @@ _color_yellow="\e[0;33m"
 arg_verbose=0
 arg_full=0
 arg_fix=0
+arg_course=""
+
+bootcamp=unkown
 
 function show_help() {
 	echo "usage: $(basename "$0") [OPTIONS]"
 	echo "options:"
-	echo "  --verbose|-v	Activate verbose output -vv for even more"
-	echo "  --full          Takes longer and tests more"
-	echo "  --fix		The doctor by default does mostly diagnose. This does autofixing"
+	echo "  --verbose|-v          Activate verbose output -vv for even more"
+	echo "  --full                Takes longer and tests more"
+	echo "  --fix                 The doctor by default does mostly diagnose. This does autofixing"
+	echo "  --course <web|data>   Web and data camps have different setups"
 }
 
 function parse_args() {
@@ -59,6 +63,17 @@ function parse_args() {
 			elif [ "$arg" == "--fix" ]
 			then
 				arg_fix=1
+			elif [ "$arg" == "--course" ]
+			then
+				arg_course="$1"
+				bootcamp="$1"
+				shift
+
+				if [ "$bootcamp" != "web" ] && [ "$bootcamp" != "data" ]
+				then
+					echo "usage: $(basename "$0") --course <web|data>"
+					exit 1
+				fi
 			else
 				show_help
 				exit 1
@@ -325,6 +340,30 @@ function check_shell() {
 	fi
 }
 
+function is_data() {
+	[[ "$bootcamp" == "data" ]] && return 0
+	return 1
+}
+function is_web() {
+	[[ "$bootcamp" == "web" ]] && return 0
+	return 1
+}
+
+function detect_bootcamp() {
+	if [ "$arg_course" != "" ]
+	then
+		return
+	fi
+	# assume web by default
+	# detect data based on heuristics
+	bootcamp=web
+	if [ -x "$(command -v ncdu)" ]
+	then
+		bootcamp=data
+	fi
+	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -334,6 +373,7 @@ function main() {
 		check_brew
 	fi
 	check_shell
+	detect_bootcamp
 	log "Hi I am the doctor"
 }
 
