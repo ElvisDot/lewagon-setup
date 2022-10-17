@@ -50,6 +50,22 @@ function okay() {
 	printf '%b[%b+%b]%b %s\n' "$_color_WHITE" "$_color_GREEN" "$_color_WHITE" "$_color_RESET" "$1"
 }
 
+function check_ssl() {
+	local host
+	local hosts=(https://github.com https://lewagon.com https://google.com)
+	for host in "${hosts[@]}"
+	do
+		if [ -x "$(command -v curl)" ]
+		then
+			curl "$host" &>/dev/null && return
+		elif [ -x "$(command -v wget)" ]
+		then
+			wget "$host" &>/dev/null && return
+		fi
+	done
+	warning "Warning: Could not establish SSL connection!"
+}
+
 function check_internet() {
 	local ip
 	# Even the stable LeWagon munich office had a hiccup for 8.8.8.8
@@ -57,9 +73,24 @@ function check_internet() {
 	local ips=(8.8.8.8 8.8.4.4 1.1.1.1)
 	for ip in "${ips[@]}"
 	do
-		if ping "$ip" -c1 -w1 &>/dev/null
+		if ping "$ip" -c 1 -W 2 &>/dev/null
 		then
 			return
+		fi
+	done
+
+	# Some networks including github CI might block ping
+	# So do a http fallback test before concluding the internet is down
+	local host
+	local hosts=(http://github.com http://lewagon.com http://google.com)
+	for host in "${hosts[@]}"
+	do
+		if [ -x "$(command -v curl)" ]
+		then
+			curl "$host" &>/dev/null && return
+		elif [ -x "$(command -v wget)" ]
+		then
+			wget "$host" &>/dev/null && return
 		fi
 	done
 	error "Error: could not ping 8.8.8.8 is your internet working?"
@@ -75,11 +106,11 @@ function check_dns() {
 	do
 		if ping "$host" -c1 -w1 &>/dev/null
 		then
-			return
+			return 0
 		fi
 	done
-	error "Error: could not ping 8.8.8.8 is your internet working?"
-	exit 1
+	error "Error: could not ping github.com"
+	return 1
 }
 
 function check_user() {
@@ -182,8 +213,11 @@ function device_info() {
 
 function check_basics() {
 	check_colors
-	check_internet
-	check_dns
+	if ! check_dns
+	then
+		check_internet
+	fi
+	check_ssl
 	check_user
 }
 
