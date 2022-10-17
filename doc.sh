@@ -21,6 +21,69 @@ _color_yellow="\e[0;33m"
 # _color_cyan="\e[0;36m"
 # _color_white="\e[0;37m"
 
+arg_verbose=0
+arg_full=0
+
+function show_help() {
+	echo "usage: $(basename "$0") [OPTIONS]"
+	echo "options:"
+	echo "  --verbose|-v	Activate verbose output -vv for even more"
+	echo "  --full          Takes longer and tests more"
+}
+
+function parse_args() {
+	local flags
+	local flag
+	local arg
+	while true
+	do
+		[[ "$#" -lt "1" ]] && break
+
+		arg="$1"
+		shift
+
+		if [[ "${arg::2}" == "--" ]]
+		then
+			if [ "$arg" == "--help" ]
+			then
+				show_help
+				exit 0
+			elif [ "$arg" == "--full" ]
+			then
+				arg_full=1
+			elif [ "$arg" == "--verbose" ]
+			then
+				arg_verbose=1
+			else
+				show_help
+				exit 1
+			fi
+		elif [[ "${arg::1}" == "-" ]]
+		then
+			flags="${arg:1}"
+			while IFS= read -n1 -r flag
+			do
+				if [[ "$flag" == "v" ]]
+				then
+					arg_verbose="$((arg_verbose+1))"
+				elif [[ "$flag" == "h" ]]
+				then
+					show_help
+					exit 0
+				else
+					echo "Error: unkown flag '$flag'"
+					exit 1
+				fi
+			done < <(echo -n "$flags")
+		else
+			echo "Error: unkown argument '$arg'"
+			exit 1
+		fi
+	done
+}
+
+parse_args "$@"
+
 function check_colors() {
 	if [ "$NO_COLOR" == "" ] && [ -t 1 ] && [[ "$TERM" =~ color ]]
 	then
@@ -109,7 +172,10 @@ function check_dns() {
 			return 0
 		fi
 	done
-	error "Error: could not ping github.com"
+	if [ "$arg_verbose" -gt "0" ]
+	then
+		warning "Warning: could not ping github.com"
+	fi
 	return 1
 }
 
@@ -212,16 +278,19 @@ function device_info() {
 }
 
 function check_basics() {
-	check_colors
 	if ! check_dns
 	then
 		check_internet
 	fi
-	check_ssl
+	if [ "$arg_full" == "1" ]
+	then
+		check_ssl
+	fi
 	check_user
 }
 
 function main() {
+	check_colors
 	device_info
 	check_basics
 	if is_mac
