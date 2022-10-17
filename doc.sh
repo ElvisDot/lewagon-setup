@@ -23,12 +23,14 @@ _color_yellow="\e[0;33m"
 
 arg_verbose=0
 arg_full=0
+arg_fix=0
 
 function show_help() {
 	echo "usage: $(basename "$0") [OPTIONS]"
 	echo "options:"
 	echo "  --verbose|-v	Activate verbose output -vv for even more"
 	echo "  --full          Takes longer and tests more"
+	echo "  --fix		The doctor by default does mostly diagnose. This does autofixing"
 }
 
 function parse_args() {
@@ -54,6 +56,9 @@ function parse_args() {
 			elif [ "$arg" == "--verbose" ]
 			then
 				arg_verbose=1
+			elif [ "$arg" == "--fix" ]
+			then
+				arg_fix=1
 			else
 				show_help
 				exit 1
@@ -290,6 +295,36 @@ function check_basics() {
 	check_user
 }
 
+function check_shell() {
+	if [[ "$SHELL" =~ zsh ]]
+	then
+		return
+	fi
+
+	if [ "$arg_fix" == "0" ]
+	then
+		warn "Warning: zsh is not your default shell"
+	else
+		if [ -x "$(command -v zsh)" ]
+		then
+			chsh -s "$(which zsh)"
+		else
+			error "Error: did not find zsh"
+			if is_ubuntu
+			then
+				echo "$_color_WHITE"
+				echo "  sudo apt install zsh"
+				echo "$_color_RESET"
+			elif is_mac
+			then
+				echo "$_color_WHITE"
+				echo "  brew install zsh"
+				echo "$_color_RESET"
+			fi
+		fi
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -298,6 +333,7 @@ function main() {
 	then
 		check_brew
 	fi
+	check_shell
 	log "Hi I am the doctor"
 }
 
