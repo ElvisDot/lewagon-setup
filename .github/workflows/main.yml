@@ -18,10 +18,16 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y shellcheck
+
       - name: Run the doctor
         run: ./doc.sh
+
+      - name: Run the doctor (full/verbose)
+        run: ./doc.sh --full -vvv
+
       - name: Shellcheck
         run: find . -type f -name '*.sh' -print0 | xargs -0 shellcheck
+
   test-macOS:
     runs-on: macos-latest
     steps:
@@ -29,3 +35,6 @@ jobs:
 
       - name: Run the doctor
         run: ./doc.sh
+
+      - name: Run the doctor (full/verbose)
+        run: ./doc.sh --full -vvv
