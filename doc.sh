@@ -362,7 +362,7 @@ function device_info() {
 		exit 1
 	fi
 	log "Detected $_color_green$detected_os$_color_RESET $detected_distro $(is_arm && echo -e "$_color_green(arm)$_color_RESET")"
-	if is_linux && ! is_ubuntu
+	if ! is_mac && ! is_ubuntu
 	then
 		warn "Warning: LeWagon setup recommends Ubuntu"
 		warn "         other distros are fine if you know what you are doing"
@@ -483,6 +483,77 @@ function detect_bootcamp() {
 	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
 }
 
+function install_rbenv() {
+	if [ -x "$(command -v rbenv)" ]
+	then
+		return
+	fi
+
+	# todo: do this better
+	if is_mac && is_arm
+	then
+		if [ -f /opt/homebrew/bin/rbenv ]
+		then
+			error "Error: Failed to fix rbenv. Try restarting your terminal"
+			error "       if that does not help please report the issue here"
+			error ""
+			error "       https://github.com/ElvisDot/lewagon-setup/issues"
+			error ""
+			exit 1
+		fi
+	fi
+	if is_linux || is_windows
+	then
+		if [ -f ~/.rbenv/bin/rbenv ]
+		then
+			error "Error: Failed to fix rbenv. Try restarting your terminal"
+			error "       if that does not help please report the issue here"
+			error ""
+			error "       https://github.com/ElvisDot/lewagon-setup/issues"
+			error ""
+			exit 1
+		fi
+	fi
+
+	rvm implode &>/dev/null && sudo rm -rf ~/.rvm
+
+	if is_linux || is_windows
+	then
+		if is_ubuntu && [ ! -x "$(command -v g++)" ]
+		then
+			sudo apt-get update -y
+			sudo apt-get install -y \
+				build-essential \
+				tklib zlib1g-dev \
+				libssl-dev libffi-dev \
+				libxml2 libxml2-dev \
+				libxslt1-dev libreadline-dev
+		fi
+		git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+		git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+		warning "Warning: Please restart your terminal and try again"
+		exit 1
+	elif is_mac
+	then
+		brew install rbenv
+		warning "Warning: Please restart your terminal and try again"
+		exit 1
+	fi
+	error "Error: Failed to get rbenv. Try restarting your terminal"
+	error "       if that does not help please report the issue here"
+	error ""
+	error "       https://github.com/ElvisDot/lewagon-setup/issues"
+	exit 1
+}
+
+function check_ruby() {
+	if [ ! -x "$(command -v rbenv)" ]
+	then
+		install_rbenv
+	fi
+	# todo: check ruby version
+}
+
 function main() {
 	check_colors
 	device_info
@@ -493,6 +564,10 @@ function main() {
 	fi
 	detect_bootcamp
 	check_vscode
+	if is_web
+	then
+		check_ruby
+	fi
 	log "Hi I am the doctor"
 }
 
