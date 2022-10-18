@@ -146,7 +146,7 @@ function check_ssl() {
 			wget "$host" &>/dev/null && return
 		fi
 	done
-	warning "Warning: Could not establish SSL connection!"
+	warn "Warning: Could not establish SSL connection!"
 }
 
 function check_internet() {
@@ -194,7 +194,7 @@ function check_dns() {
 	done
 	if [ "$arg_verbose" -gt "0" ]
 	then
-		warning "Warning: could not ping github.com"
+		warn "Warning: could not ping github.com"
 	fi
 	return 1
 }
@@ -278,7 +278,7 @@ function check_brew() {
 			# shellcheck disable=SC2016
 			echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 			eval "$(/opt/homebrew/bin/brew shellenv)"
-			warning "Warning: please restart your terminal for brew to work"
+			warn "Warning: please restart your terminal for brew to work"
 		fi
 	else # x86
 		if [ ! -f /usr/local/bin/brew ]
@@ -451,11 +451,11 @@ function check_vscode() {
 	if [ -d "$dl_path" ]
 	then
 		# todo: test this and then do it automatically when --fix is active
-		warning "Warning: vscode is found in the ~/Downloads folder"
-		warning "         It should be in your Applications folder to fix it run:"
-		warning ""
-		warninf "$_color_WHITE  mv ~/Downloads/Visual\ Studio\ Code.app /Applications  $_color_RESET"
-		warning ""
+		warn "Warning: vscode is found in the ~/Downloads folder"
+		warn "         It should be in your Applications folder to fix it run:"
+		warn ""
+		warn "$_color_WHITE  mv ~/Downloads/Visual\ Studio\ Code.app /Applications  $_color_RESET"
+		warn ""
 	fi
 }
 
@@ -531,12 +531,12 @@ function install_rbenv() {
 		fi
 		git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 		git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-		warning "Warning: Please restart your terminal and try again"
+		warn "Warning: Please restart your terminal and try again"
 		exit 1
 	elif is_mac
 	then
 		brew install rbenv
-		warning "Warning: Please restart your terminal and try again"
+		warn "Warning: Please restart your terminal and try again"
 		exit 1
 	fi
 	error "Error: Failed to get rbenv. Try restarting your terminal"
@@ -554,6 +554,40 @@ function check_ruby() {
 	# todo: check ruby version
 }
 
+function check_dotfiles() {
+	local dotfiles=(
+		~/.aliases
+		~/.gitconfig
+		~/.irbrc
+		~/.rspec
+		~/.zprofile
+		~/.zshrc
+	)
+	local dotfile
+	local broken_links=0
+	for dotfile in "${dotfiles[@]}"
+	do
+		# ignore non symlink dotfiles
+		[[ -L "$dotfile" ]] || break
+
+		# if the symlink is dead
+		# (pointing to a invalid file)
+		# delete it so the lewagon setup can relink it
+		if [ ! -e "$dotfile" ]
+		then
+			rm "$dotfile"
+			broken_links=1
+		fi
+	done
+	if [ "$broken_links" == "1" ]
+	then
+		# todo: fix this automatically
+		error "Error: you had broken symlinks"
+		error "         please run the dotfiles install again"
+		exit 1
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -564,6 +598,7 @@ function main() {
 	fi
 	detect_bootcamp
 	check_vscode
+	check_dotfiles
 	if is_web
 	then
 		check_ruby
