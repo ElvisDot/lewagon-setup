@@ -552,10 +552,16 @@ function install_rbenv() {
 				libxml2 libxml2-dev \
 				libxslt1-dev libreadline-dev
 		fi
-		git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-		git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-		warn "Warning: Please restart your terminal and try again"
-		exit 1
+		if [ "$arg_fix" == "0" ]
+		then
+			warn "Warning: please install rbenv or run the doctor with --fix"
+			return
+		else
+			git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+			git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+			warn "Warning: Please restart your terminal and try again"
+			exit 1
+		fi
 	elif is_mac
 	then
 		brew install rbenv
@@ -621,9 +627,9 @@ function check_dotfiles() {
 	fi
 	if [ "$found_dotfiles" == "1" ] && grep -q "rbenv init" ~/.zshrc
 	then
-		return 0
+		return 1
 	fi
-	return 1
+	return 0
 }
 
 function main() {
