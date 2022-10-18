@@ -476,9 +476,32 @@ function detect_bootcamp() {
 	# assume web by default
 	# detect data based on heuristics
 	bootcamp=web
-	if [ -x "$(command -v ncdu)" ]
+	if [ -x "$(command -v ncdu)" ] || [ -x "$(command -v direnv)" ]
 	then
 		bootcamp=data
+	fi
+	if [ -x "$(command -v code)" ]
+	then
+		# vscode being the electron mess it is can throw
+		# some error like this: (we don't wanna pollute the output with that)
+		# Error: Unexpected SIGPIPE
+		#  at process.<anonymous> (/usr/share/code/resources/app/out/cli.js:1:615)
+		#  at process.emit (node:events:526:28)
+		if code --list-extensions | grep -q ruby &>/dev/null
+		then
+			bootcamp=web
+		fi
+		if code --list-extensions | grep -Eqi '(jupyter|pylance)' &>/dev/null
+		then
+			bootcamp=data
+		fi
+	fi
+	if [ -d ~/.pyenv ]
+	then
+		bootcamp=data
+	elif [ -d ~/.rbenv ]
+	then
+		bootcamp=web
 	fi
 	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
 }
