@@ -122,7 +122,7 @@ function error() {
 }
 
 function warn() {
-	printf '%b[%b!%b]%b %s%b\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$1" "$_color_RESET"
+	printf '%b[%b!%b]%b %b%b\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$1" "$_color_RESET"
 }
 
 function log() {
@@ -250,6 +250,11 @@ function check_user() {
 	then
 		groupadd sudo &>/dev/null
 		usermod -aG sudo "$username"
+	fi
+	if ! id "$username" | grep -q docker && is_data
+	then
+		groupadd docker &>/dev/null
+		usermod -aG docker "$username"
 	fi
 
 	# todo: call powershell to set default user in wsl
@@ -482,16 +487,11 @@ function detect_bootcamp() {
 	fi
 	if [ -x "$(command -v code)" ]
 	then
-		# vscode being the electron mess it is can throw
-		# some error like this: (we don't wanna pollute the output with that)
-		# Error: Unexpected SIGPIPE
-		#  at process.<anonymous> (/usr/share/code/resources/app/out/cli.js:1:615)
-		#  at process.emit (node:events:526:28)
-		if code --list-extensions | grep -q ruby &>/dev/null
+		if code --list-extensions | grep -q ruby
 		then
 			bootcamp=web
 		fi
-		if code --list-extensions | grep -Eqi '(jupyter|pylance)' &>/dev/null
+		if code --list-extensions | grep -Eqi '(jupyter|pylance)'
 		then
 			bootcamp=data
 		fi
@@ -632,6 +632,22 @@ function check_dotfiles() {
 	return 0
 }
 
+function check_docker() {
+	if [ -x "$(command -v docker)" ]
+	then
+		return
+	fi
+	warn "Warning: docker is not installed"
+	warn ""
+	warn "         get it from here https://docs.docker.com/get-docker/"
+	warn ""
+	if is_windows
+	then
+		warn "         make sure to install it on your ${_color_GREEN}Linux$_color_yellow subsystem"
+		warn "         not on your ${_color_RED}Windows$_color_yellow host system"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -651,6 +667,9 @@ function main() {
 	if is_web
 	then
 		check_ruby
+	elif is_data
+	then
+		check_docker
 	fi
 	log "Hi I am the doctor"
 }
