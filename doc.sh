@@ -368,6 +368,41 @@ function check_shell() {
 	fi
 }
 
+function check_vscode() {
+	if [ -x "$(command -v code)" ]
+	then
+		return
+	fi
+	local vs_path="/Library/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
+	if [ -f "$vs_path"/code ]
+	then
+		# The proper way would be to do what brew does
+		# I assume they sym link the binary to something that is in the PATH
+		# Or better let brew do it by reinstalling vscode
+		# The issue tho is that deleting vscode might cause data loss?
+		# Like user settings or something like that not sure what is stored
+		# in the app dir on mac
+		#
+		# So lets go with this hacky but safe method for now
+		# Which also sadly requires restarting the shell
+		if grep -q "$vs_path" ~/.zshrc
+		then
+			echo "export PATH=\"\$PATH:$vs_path\"" >> ~/.zshrc
+		fi
+		return
+	fi
+	local dl_path="/Users/$USER/Downloads/Visual Studio Code.app"
+	if [ -d "$dl_path" ]
+	then
+		# todo: test this and then do it automatically when --fix is active
+		warning "Warning: vscode is found in the ~/Downloads folder"
+		warning "         It should be in your Applications folder to fix it run:"
+		warning ""
+		warninf "$_color_WHITE  mv ~/Downloads/Visual\ Studio\ Code.app /Library/Applications  $_color_RESET"
+		warning ""
+	fi
+}
+
 function is_data() {
 	[[ "$bootcamp" == "data" ]] && return 0
 	return 1
@@ -402,6 +437,7 @@ function main() {
 	fi
 	check_shell
 	detect_bootcamp
+	check_vscode
 	log "Hi I am the doctor"
 }
 
