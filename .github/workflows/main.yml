@@ -22,6 +22,12 @@ jobs:
       - name: Run the doctor
         run: ./doc.sh
 
+      # - name: Run the doctor (curl web)
+      #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course web
+
+      # - name: Run the doctor (curl data)
+      #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course data
+
       - name: Run the doctor (full/verbose)
         run: ./doc.sh --full -vvv
 
@@ -35,6 +41,12 @@ jobs:
 
       - name: Run the doctor
         run: ./doc.sh
+
+      # - name: Run the doctor (curl web)
+      #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course web
+
+      # - name: Run the doctor (curl data)
+      #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course data
 
       - name: Run the doctor (full/verbose)
         run: ./doc.sh --full -vvv

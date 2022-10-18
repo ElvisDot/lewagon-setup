@@ -540,6 +540,17 @@ function install_rbenv() {
 
 	rvm implode &>/dev/null && sudo rm -rf ~/.rvm
 
+	if [ "$arg_fix" == "0" ]
+	then
+		warn "Warning: please install rbenv or run the doctor with --fix"
+		return
+	fi
+	if [ "$arg_course" != "web" ]
+	then
+		# todo: is silent fail nice?
+		return
+	fi
+
 	if is_linux || is_windows
 	then
 		if is_ubuntu && [ ! -x "$(command -v g++)" ]
@@ -552,16 +563,10 @@ function install_rbenv() {
 				libxml2 libxml2-dev \
 				libxslt1-dev libreadline-dev
 		fi
-		if [ "$arg_fix" == "0" ]
-		then
-			warn "Warning: please install rbenv or run the doctor with --fix"
-			return
-		else
-			git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-			git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-			warn "Warning: Please restart your terminal and try again"
-			exit 1
-		fi
+		git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+		git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+		warn "Warning: Please restart your terminal and try again"
+		exit 1
 	elif is_mac
 	then
 		brew install rbenv
