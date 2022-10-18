@@ -199,13 +199,64 @@ function check_dns() {
 	return 1
 }
 
+function detect_user() {
+	if grep -qF ':1000:' /etc/passwd
+	then
+		grep ':1000:' /etc/passwd | cut -d':' -f1 | head -n1
+	fi
+	# This one showed all the users I created on my debian system
+	# but not sure how much sense that makes
+	# grep -Ev '(^root:|^postgres:|nologin$|false$|sync$)' /etc/passwd | cut -d':' -f1 | head -n1
+}
+
 function check_user() {
 	if [[ "$UID" != "0" ]] && [[ "$EUID" != "0" ]]
 	then
 		return
 	fi
-	error "Error: do not run the script as root"
-	exit 1
+	warn "Warning: do not run the script as root"
+	local username
+	local zsh_path
+	zsh_path="$(command -v zsh)"
+	if [ "$zsh_path" == "" ]
+	then
+		error "Error: you need zsh installed"
+		exit 1
+	fi
+
+	username="$(detect_user)"
+	if [ "$username" == "" ]
+	then
+		# grep NAME_REGEX /etc/adduser.conf
+		while [[ ! "$username" =~ ^[a-z][-a-z0-9_]*$ ]]
+		do
+			log "Please pick a username that meets those conditions:"
+			log " - not starting with a number"
+			log " - only lowercase letters from a-z"
+			log " - something short like your first name"
+			read -r username
+		done
+
+		useradd "$username" --create-home --shell="$zsh_path" || {
+			error "Error: failed to create user"
+			exit 1;
+		}
+		log "Now pick a password for your linux user"
+		log "Note you won't see what you are typing not even a *"
+		passwd "$username"
+	fi
+
+	if ! id "$username" | grep -q sudo
+	then
+		groupadd sudo &>/dev/null
+		usermod -aG sudo "$username"
+	fi
+
+	# todo: call powershell to set default user in wsl
+	if is_windows
+	then
+		powershell.exe -c "ubuntu config --default-user $username"
+	fi
 }
 
 function check_brew() {
@@ -271,7 +322,7 @@ function device_info() {
 	if [[ $OSTYPE == 'darwin'* ]]
 	then
 		detected_os='macOS'
-	elif grep -q Microsoft /proc/version
+	elif grep -q Microsoft /proc/version || uname -a | grep -iq '^Linux.*Microsoft'
 	then
 		detected_os='WSL'
 	elif [[ "$(uname)" == "Linux" ]]
@@ -335,7 +386,11 @@ function check_basics() {
 	then
 		check_ssl
 	fi
-	check_user
+	check_shell
+	if is_windows || is_linux
+	then
+		check_user
+	fi
 }
 
 function check_shell() {
@@ -364,6 +419,7 @@ function check_shell() {
 				echo "  brew install zsh"
 				echo "$_color_RESET"
 			fi
+			exit 1
 		fi
 	fi
 }
@@ -373,7 +429,7 @@ function check_vscode() {
 	then
 		return
 	fi
-	local vs_path="/Library/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
+	local vs_path="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
 	if [ -f "$vs_path"/code ]
 	then
 		# The proper way would be to do what brew does
@@ -398,7 +454,7 @@ function check_vscode() {
 		warning "Warning: vscode is found in the ~/Downloads folder"
 		warning "         It should be in your Applications folder to fix it run:"
 		warning ""
-		warninf "$_color_WHITE  mv ~/Downloads/Visual\ Studio\ Code.app /Library/Applications  $_color_RESET"
+		warninf "$_color_WHITE  mv ~/Downloads/Visual\ Studio\ Code.app /Applications  $_color_RESET"
 		warning ""
 	fi
 }
@@ -435,7 +491,6 @@ function main() {
 	then
 		check_brew
 	fi
-	check_shell
 	detect_bootcamp
 	check_vscode
 	log "Hi I am the doctor"
