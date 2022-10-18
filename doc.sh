@@ -586,6 +586,21 @@ function check_dotfiles() {
 		error "         please run the dotfiles install again"
 		exit 1
 	fi
+	local d
+	local found_dotfiles=0
+	for d in ~/code/*/dotfiles
+	do
+		[[ -d "$d" ]] && found_dotfiles=1
+	done
+	if [ ! -f ~/.zshrc ]
+	then
+		found_dotfiles=0
+	fi
+	if [ "$found_dotfiles" == "1" ] && grep -q "rbenv init" ~/.zshrc
+	then
+		return 0
+	fi
+	return 1
 }
 
 function main() {
@@ -598,7 +613,12 @@ function main() {
 	fi
 	detect_bootcamp
 	check_vscode
-	check_dotfiles
+	if ! check_dotfiles
+	then
+		# do not continue if no dotfiles are found
+		error "Error: missing dotfiles aborting"
+		exit 1
+	fi
 	if is_web
 	then
 		check_ruby
