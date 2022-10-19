@@ -593,6 +593,30 @@ function install_rbenv() {
 	exit 1
 }
 
+function wanted_ruby_version() {
+	# We could get the latest version from here
+	#
+	# curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep "^REQUIRED_RUBY_VERSION" | cut -d'"' -f2
+	#
+	# but doing http requests is slow
+	# so maybe add this to the CI
+	# or only if some last_updated variable
+	# is more than x days ago
+	echo "3.1.2"
+}
+
+function is_outdated_ruby() {
+	local check="$1"
+	local wanted
+	wanted="$(wanted_ruby_version)"
+	# strip dots and turn it into a comparable number
+	# 3.1.2 -> 312
+	wanted="${wanted//./}"
+	check="${check//./}"
+	[[ "$check" -lt "$wanted" ]] && return 0
+	return 1
+}
+
 function check_ruby() {
 	if [ ! -x "$(command -v rbenv)" ]
 	then
@@ -605,7 +629,21 @@ function check_ruby() {
 	fi
 	if [[ ! "$(command -v ruby)" =~ shims ]]
 	then
+		# todo: fix it
 		warn "Warning: ruby is not installed via rbenv"
+	fi
+
+	local ruby_vers
+	ruby_vers="$(ruby -e "puts RUBY_VERSION" 2>/dev/null)"
+
+	if is_outdated_ruby "$ruby_vers"
+	then
+		warn "Warning: your ruby version $_color_RED$ruby_vers$_color_yellow is outdated"
+		warn "         the expected version is $_color_GREEN$(wanted_ruby_version)"
+		warn "         To fix it try running these commands"
+		warn ""
+		warn "         ${_color_WHITE}rbenv install $(wanted_ruby_version)"
+		warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
 	fi
 }
 
