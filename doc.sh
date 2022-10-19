@@ -383,6 +383,16 @@ function device_info() {
 			warn "Warning: your macOS is outdated please do a update"
 		fi
 	fi
+	if is_windows
+	then
+		local winver
+		winver="$(powershell.exe -c "[System.Environment]::OSVersion.Version.Major")"
+		# note that winver is 10 on windows 11 but it is less than 10 on windows 8
+		if [ "$winver" -lt "10" ]
+		then
+			warn "Warning: your windows is outdated please do a update"
+		fi
+	fi
 }
 
 function check_basics() {
