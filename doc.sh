@@ -598,7 +598,15 @@ function check_ruby() {
 	then
 		install_rbenv
 	fi
-	# todo: check ruby version
+	if [ ! -x "$(command -v ruby)" ]
+	then
+		# todo: get ruby
+		return
+	fi
+	if [[ ! "$(command -v ruby)" =~ shims ]]
+	then
+		warn "Warning: ruby is not installed via rbenv"
+	fi
 }
 
 function run_dotfiles_install() {
