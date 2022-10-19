@@ -588,6 +588,27 @@ function check_ruby() {
 	# todo: check ruby version
 }
 
+function run_dotfiles_install() {
+	local dir
+	local dotfiles_dir=''
+	for dir in ~/code/*/
+	do
+		[[ -d "$dir" ]] || return 1
+		[[ "$(basename "$dir")" =~ [Ll]e[Ww]agon ]] && continue
+
+		dotfiles_dir="$dir"
+	done
+	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
+	then
+		error "Error: you are missing the dotfiles folder"
+		error "       follow those steps again"
+		error ""
+		error "       https://github.com/lewagon/setup/blob/master/macos.md#dotfiles-standard-configuration"
+		error ""
+		exit 1
+	fi
+}
+
 function check_dotfiles() {
 	local dotfiles=(
 		~/.aliases
@@ -615,10 +636,7 @@ function check_dotfiles() {
 	done
 	if [ "$broken_links" == "1" ]
 	then
-		# todo: fix this automatically
-		error "Error: you had broken symlinks"
-		error "         please run the dotfiles install again"
-		exit 1
+		run_dotfiles_install
 	fi
 	local d
 	local found_dotfiles=0
@@ -653,6 +671,112 @@ function check_docker() {
 	fi
 }
 
+function check_github_access() {
+	test
+}
+
+function fix_gitsome() {
+	is_mac && return
+
+	if [ ! -x "$(command -v curl)" ]
+	then
+		sudo apt-get install -y curl
+	fi
+	# gh command can conflict with gitsome if already installed
+	sudo apt-get remove -y gitsome
+	curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+	echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" |
+		sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+	sudo apt-get update -y
+}
+
+function check_package_manager_programs() {
+	local programs=()
+	local prog
+	if is_mac && is_data
+	then
+		for prog in openssl tree ncdu xz
+		do
+			[[ ! -x "$(command -v "$prog")" ]] || programs+=("$prog")
+		done
+		# todo: check readline
+	elif is_data # linux/windows
+	then
+		for prog in unzip vim zsh tree
+		do
+			[[ ! -x "$(command -v "$prog")" ]] || programs+=("$prog")
+		done
+	fi
+
+	for prog in git jq gh wget openssl tree
+	do
+		[[ ! -x "$(command -v "$prog")" ]] || programs+=("$prog")
+	done
+
+	if [[ ! -x "$(command -v convert)" ]]
+	then
+		programs+=(imagemagick)
+	fi
+
+	# none missing skip
+	if (( ${#programs[@]} == 0 ))
+	then
+		return
+	fi
+
+	if is_mac
+	then
+		brew install "${programs[@]}"
+	else
+		for prog in "${programs[@]}"
+		do
+			if [ "$prog" == "gh" ]
+			then
+				fix_gitsome
+				break
+			fi
+		done
+		sudo apt-get install -y "${programs[@]}"
+	fi
+}
+
+function check_database() {
+	# todo: check that the user was created and its enabled
+	if is_mac
+	then
+		if [ ! -x "$(command -v sqlite3)" ]
+		then
+			brew install sqlite
+		fi
+		if [ ! -x "$(command -v psql)" ]
+		then
+			brew install postgresql
+			brew services start postgresql
+		fi
+	else # Windows/Linux
+		if [ ! -x "$(command -v sqlite3)" ]
+		then
+			sudo apt-get install -y sqlite3 libsqlite3-dev
+		fi
+		if [ ! -x "$(command -v psql)" ]
+		then
+			sudo apt-get install -y postgresql postgresql-contrib libpq-dev build-essential
+			if [ -f /etc/init.d/postgresql ]
+			then
+				sudo /etc/init.d/postgresql start
+			elif [ -x "$(command -v systemctl)" ]
+			then
+				sudo systemctl start postgresql
+			else
+				error "Error: failed to start postgresql"
+				error "       please report this issue here"
+				error "       https://github.com/ElvisDot/lewagon-setup/issues"
+				exit 1
+			fi
+		fi
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -663,6 +787,8 @@ function main() {
 	fi
 	detect_bootcamp
 	check_vscode
+	check_package_manager_programs
+	check_github_access
 	if ! check_dotfiles
 	then
 		# do not continue if no dotfiles are found
@@ -676,7 +802,9 @@ function main() {
 	then
 		check_docker
 	fi
-	log "Hi I am the doctor"
+	check_database
+	log "Hi I am the doctor. I am in a early stage of development."
+	log "This is still a experimental version"
 }
 
 main
