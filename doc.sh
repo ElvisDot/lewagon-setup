@@ -28,6 +28,10 @@ arg_course=""
 
 bootcamp=unkown
 
+# Auto say yes on new ssh connections when being prompted this
+# Are you sure you want to continue connecting (yes/no/[fingerprint])
+export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+
 function show_help() {
 	echo "usage: $(basename "$0") [OPTIONS]"
 	echo "options:"
@@ -672,7 +676,76 @@ function check_docker() {
 }
 
 function check_github_access() {
-	test
+	if [ ! -x "$(command -v gh)" ]
+	then
+		error "Error: failed to find the github cli"
+		error "       try to run the following command to install it"
+		error ""
+		if is_mac
+		then
+			error "       ${_color_WHITE}brew install gh"
+		else
+			error "       ${_color_WHITE}sudo apt install -y gh"
+		fi
+		error ""
+		exit 1
+	fi
+	local is_logged_in=1
+	if [ "$arg_full" == "1" ]
+	then
+		local ssh_response
+		ssh_response="$(ssh -T git@github.com)"
+		if ! [[ "$ssh_response" =~ successfully\ authenticated ]]
+		then
+			is_logged_in=0
+		fi
+	else
+		if [ ! -f ~/.config/gh/hosts.yml ]
+		then
+			is_logged_in=0
+		elif ! grep -q "user:" ~/.config/gh/hosts.yml
+		then
+			is_logged_in=0
+		fi
+	fi
+
+	if [ "$is_logged_in" == "1" ]
+	then
+		return
+	fi
+
+	if [ ! -f ~/.ssh/config ]
+	then
+		# todo: run dotfiles make sure they fix it
+		warn "Warning: no ~/.ssh/config found"
+	else
+		if [ "$(grep -c Host ~/.ssh/config)" != "1" ] ||
+			[ "$(grep -c IdentityFile ~/.ssh/config)" != "1" ]
+		then
+			warn "Warning: custom ~/.ssh/config found"
+			warn "         this is fine as long as you know what you do"
+		fi
+		local ident
+		while read -r ident
+		do
+			if [ ! -f "$ident" ]
+			then
+				# todo: auto fix this
+				error "Error: your ~/.ssh/config points to a invalid identity file"
+				error "       $ident"
+				exit 1
+			fi
+		done < <(grep '^[[:space:]]*IdentityFile' ~/.ssh/config | awk '{ print $2 }')
+	fi
+
+	# todo: autofix this or ask for reporting an issue
+	error "Error: your git and github are not linked"
+	error "       try running those commands"
+	error ""
+	error "       ${_color_WHITE}gh auth logout$_color_RESET"
+	error "       ${_color_WHITE}gh auth login$_color_RESET"
+	error ""
+	exit 1
 }
 
 function fix_gitsome() {
@@ -697,20 +770,20 @@ function check_package_manager_programs() {
 	then
 		for prog in openssl tree ncdu xz
 		do
-			[[ ! -x "$(command -v "$prog")" ]] || programs+=("$prog")
+			[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 		done
 		# todo: check readline
 	elif is_data # linux/windows
 	then
 		for prog in unzip vim zsh tree
 		do
-			[[ ! -x "$(command -v "$prog")" ]] || programs+=("$prog")
+			[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 		done
 	fi
 
 	for prog in git jq gh wget openssl tree
 	do
-		[[ ! -x "$(command -v "$prog")" ]] || programs+=("$prog")
+		[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 	done
 
 	if [[ ! -x "$(command -v convert)" ]]
@@ -798,11 +871,11 @@ function main() {
 	if is_web
 	then
 		check_ruby
+		check_database
 	elif is_data
 	then
 		check_docker
 	fi
-	check_database
 	log "Hi I am the doctor. I am in a early stage of development."
 	log "This is still a experimental version"
 }
