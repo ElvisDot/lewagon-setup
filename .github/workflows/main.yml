@@ -18,6 +18,8 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y shellcheck
+          mkdir -p ~/.config/gh
+          echo "user: fakeuser" >> ~/.config/gh/hosts.yml
 
       - name: Run the doctor
         run: ./doc.sh
@@ -38,6 +40,11 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Prepare
+        run: |
+          mkdir -p ~/.config/gh
+          echo "user: fakeuser" >> ~/.config/gh/hosts.yml
 
       - name: Run the doctor
         run: ./doc.sh
