@@ -736,6 +736,28 @@ function check_github_access() {
 			fi
 		done < <(grep '^[[:space:]]*IdentityFile' ~/.ssh/config | awk '{ print $2 }')
 	fi
+	if [ ! -f ~/.ssh/id_ed25519 ]
+	then
+		# todo: do we do a gh auth login here or a ssh-keygen?
+		error "Error: no LeWagon ssh key found"
+		error "       try running this command"
+		error ""
+		error "       ${_color_WHITE}gh auth login"
+		error ""
+		exit 1
+	fi
+	local ssh_pub
+	for ssh_pub in ~/.ssh/*.pub
+	do
+		[[ "$ssh_pub" == "id_ed25519.pub" ]] && continue
+
+		if [ -f "$ssh_pub" ]
+		then
+			warn "Warning: unexpected ssh key found ${_color_YELLOW}$ssh_pub"
+			warn "         this is fine if you know what you are doing"
+			exit 1
+		fi
+	done
 
 	# todo: autofix this or ask for reporting an issue
 	error "Error: your git and github are not linked"
@@ -876,7 +898,7 @@ function main() {
 		check_docker
 	fi
 	log "Hi I am the doctor. I am in a early stage of development."
-	log "This is still a experimental version"
+	log "This is still a experimental version."
 }
 
 main
