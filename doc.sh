@@ -654,6 +654,7 @@ function run_dotfiles_install() {
 	do
 		[[ -d "$dir" ]] || return 1
 		[[ "$(basename "$dir")" =~ [Ll]e[Ww]agon ]] && continue
+		[[ ! -d "$dir"/dotfiles ]] && continue
 
 		dotfiles_dir="$dir"
 	done
@@ -666,6 +667,8 @@ function run_dotfiles_install() {
 		error ""
 		exit 1
 	fi
+	cd "$dotfiles_dir"/dotfiles || { error "Error: something went wrong"; exit 1; }
+	zsh install.sh
 }
 
 function check_dotfiles() {
@@ -681,6 +684,8 @@ function check_dotfiles() {
 	local broken_links=0
 	for dotfile in "${dotfiles[@]}"
 	do
+		[[ ! -f "$dotfile" ]] && broken_links=1
+
 		# ignore non symlink dotfiles
 		[[ -L "$dotfile" ]] || break
 
