@@ -31,7 +31,7 @@ jobs:
       #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course data
 
       - name: Run the doctor (full/verbose)
-        run: ./doc.sh --full -vvv
+        run: GITHUB_CI=1 ./doc.sh --full -vvv
 
       - name: Shellcheck
         run: find . -type f -name '*.sh' -print0 | xargs -0 shellcheck
@@ -56,4 +56,4 @@ jobs:
       #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course data
 
       - name: Run the doctor (full/verbose)
-        run: ./doc.sh --full -vvv
+        run: GITHUB_CI=1 ./doc.sh --full -vvv

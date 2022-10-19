@@ -214,6 +214,7 @@ function detect_user() {
 }
 
 function check_user() {
+	is_windows || return
 	if [[ "$UID" != "0" ]] && [[ "$EUID" != "0" ]]
 	then
 		return
@@ -261,11 +262,9 @@ function check_user() {
 		usermod -aG docker "$username"
 	fi
 
-	# todo: call powershell to set default user in wsl
-	if is_windows
-	then
-		powershell.exe -c "ubuntu config --default-user $username"
-	fi
+	powershell.exe -c "ubuntu config --default-user $username"
+	warn "Warning: please restart your terminal"
+	exit 1
 }
 
 function check_brew() {
@@ -691,7 +690,7 @@ function check_github_access() {
 		exit 1
 	fi
 	local is_logged_in=1
-	if [ "$arg_full" == "1" ]
+	if [ "$arg_full" == "1" ] && [ "$GITHUB_CI" == "" ]
 	then
 		local ssh_response
 		ssh_response="$(ssh -T git@github.com)"
