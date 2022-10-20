@@ -840,9 +840,9 @@ function check_dotfiles() {
 	fi
 	if [ "$found_dotfiles" == "1" ] && grep -q "rbenv init" ~/.zshrc
 	then
-		return 1
+		return 0
 	fi
-	return 0
+	return 1
 }
 
 function check_docker() {
