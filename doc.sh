@@ -235,6 +235,14 @@ function detect_user() {
 }
 
 function password_note() {
+	# todo: instead of prining some messages on howto change the password
+	#       just run the passwd command and input the old password already
+	#       so the user is forced to pick a password on shell launch
+	#       if that returns a 0 exit code
+	#       remove the code from the zshrc
+	#
+	#       or would that be adding too much complexity?
+	#       creating a even more buggy and confusing setup?
 	echo 'echo "your password is 123"'
 	echo 'echo "to change it run this command:"'
 	echo 'echo ""'
