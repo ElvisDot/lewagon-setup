@@ -280,7 +280,7 @@ function check_user_windows() {
 		username="$arg_unix_name"
 
 		useradd "$username" --create-home --shell="$zsh_path" || {
-			error "Error: failed to create user"
+			error "Error: failed to create user";
 			exit 1;
 		}
 		log "Now pick a password for your linux user"
