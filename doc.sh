@@ -299,7 +299,7 @@ function check_user_windows() {
 		# log "Note you won't see what you are typing not even a *"
 		# passwd "$username"
 
-		echo 123 | passwd "$username" --stdin
+		printf "123\n123\n" | passwd "$username"
 		password_note >> /home/"$username"/.zshrc
 	fi
 
