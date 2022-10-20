@@ -25,6 +25,7 @@ arg_verbose=0
 arg_full=0
 arg_fix=0
 arg_course=""
+arg_unix_name=""
 
 bootcamp=unkown
 
@@ -39,6 +40,7 @@ function show_help() {
 	echo "  --full                Takes longer and tests more"
 	echo "  --fix                 The doctor by default does mostly diagnose. This does autofixing"
 	echo "  --course <web|data>   Web and data camps have different setups"
+	echo "  --unix-name <name>    Pick your mac/linux username"
 }
 
 function parse_args() {
@@ -76,6 +78,25 @@ function parse_args() {
 				if [ "$bootcamp" != "web" ] && [ "$bootcamp" != "data" ]
 				then
 					echo "usage: $(basename "$0") --course <web|data>"
+					exit 1
+				fi
+			elif [ "$arg" == "--unix-name" ]
+			then
+				arg_unix_name="$1"
+				shift
+
+				if [ "$arg_unix_name" == "" ]
+				then
+					echo "usage: $(basename "$0") --unix-name <name>"
+					exit 1
+				fi
+				# grep NAME_REGEX /etc/adduser.conf
+				if [[ ! "$arg_unix_name" =~ ^[a-z][-a-z0-9_]*$ ]]
+				then
+					echo "Please pick a username that meets those conditions:"
+					echo " - not starting with a number"
+					echo " - only lowercase letters from a-z"
+					echo " - something short like your first name"
 					exit 1
 				fi
 			else
@@ -213,16 +234,30 @@ function detect_user() {
 	# grep -Ev '(^root:|^postgres:|nologin$|false$|sync$)' /etc/passwd | cut -d':' -f1 | head -n1
 }
 
-function check_user() {
+function check_user_windows() {
 	is_windows || return
 	if [[ "$UID" != "0" ]] && [[ "$EUID" != "0" ]]
 	then
 		return
 	fi
-	warn "Warning: do not run the script as root"
+
+	if [ "$arg_fix" == "1" ]
+	then
+		warn "Warning: do not run the script as root"
+	else
+		error "Error: do not run the script as root"
+		error "       if you only have a root user and want to fix your setup"
+		error "       run the doctor with the $_color_WHITE --fix $_color_red flag"
+		exit 1
+	fi
+
 	local username
 	local zsh_path
 	zsh_path="$(command -v zsh)"
+	if [ "$zsh_path" == "" ]
+	then
+		sudo apt-get install -y zsh
+	fi
 	if [ "$zsh_path" == "" ]
 	then
 		error "Error: you need zsh installed"
@@ -232,15 +267,17 @@ function check_user() {
 	username="$(detect_user)"
 	if [ "$username" == "" ]
 	then
-		# grep NAME_REGEX /etc/adduser.conf
-		while [[ ! "$username" =~ ^[a-z][-a-z0-9_]*$ ]]
-		do
-			log "Please pick a username that meets those conditions:"
-			log " - not starting with a number"
-			log " - only lowercase letters from a-z"
-			log " - something short like your first name"
-			read -r username
-		done
+		if [ "$arg_unix_name" == "" ]
+		then
+			error "Error: you are missing a user please pick a name"
+			error "       and call the doctor with this argument:"
+			error ""
+			error "       ${_color_WHITE}--unix-name ${_color_YELLOW}a_name_you_pick"
+			error ""
+			exit 1
+		fi
+
+		username="$arg_unix_name"
 
 		useradd "$username" --create-home --shell="$zsh_path" || {
 			error "Error: failed to create user"
@@ -407,7 +444,7 @@ function check_basics() {
 	check_shell
 	if is_windows || is_linux
 	then
-		check_user
+		check_user_windows
 	fi
 }
 

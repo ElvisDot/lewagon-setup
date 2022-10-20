@@ -20,6 +20,8 @@ jobs:
           sudo apt-get install -y shellcheck
           mkdir -p ~/.config/gh
           echo "user: fakeuser" >> ~/.config/gh/hosts.yml
+          mkdir -p ~/code/fakeuser
+          git clone https://github.com/lewagon/dotfiles ~/code/fakeuser/dotfiles
 
       - name: Run the doctor
         run: ./doc.sh
@@ -36,6 +38,13 @@ jobs:
       - name: Shellcheck
         run: find . -type f -name '*.sh' -print0 | xargs -0 shellcheck
 
+      - name: Doctor should be non interactive
+        run: |
+          if grep -v "while.*read" doc.sh | grep -nE '^[^#]*(;|^| )*read($|;| )';
+          then
+            echo "Error: found use of read keyword. The doctor should be non interactive";
+          fi
+
   test-macOS:
     runs-on: macos-latest
     steps:
@@ -45,6 +54,8 @@ jobs:
         run: |
           mkdir -p ~/.config/gh
           echo "user: fakeuser" >> ~/.config/gh/hosts.yml
+          mkdir -p ~/code/fakeuser
+          git clone https://github.com/lewagon/dotfiles ~/code/fakeuser/dotfiles
 
       - name: Run the doctor
         run: ./doc.sh
