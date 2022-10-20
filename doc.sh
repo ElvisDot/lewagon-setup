@@ -617,6 +617,120 @@ function is_outdated_ruby() {
 	return 1
 }
 
+function check_brew_in_path_after_rbenv_init() {
+	is_mac || return
+
+	if [ ! -x "$(command -v brew)" ]
+	then
+		# this should never be hit
+		# since the brew check is done before
+		# but if it somehow happens then it is a different issue
+		error "Error: please install brew and restart your terminal"
+		exit 1
+	fi
+	if grep "^[^#]*PATH=.*homebrew" ~/.zprofile
+	then
+		# zprofile is being loaded before zshrc
+		# so if brew is in zprofile and rbenv in zshrc
+		# it should be fine
+		return
+	fi
+	if grep "^[^#]*PATH=.*homebrew" ~/.zshrc
+	then
+		# if the command brew is found
+		# but we can not find the PATH manipulation in
+		# zshrc or zprofile
+		# then the doctor has a bug
+		# maybe it is set in a .bashrc instead?
+		error "Error: could not detect how brew is added to the path"
+		error "       please report this issue here"
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		exit 1
+	fi
+	local brew_ln
+	local rbenv_ln
+	brew_ln="$(grep -n "^[^#]*PATH=.*homebrew" ~/.zshrc | cut -d':' -f1)"
+	# shellcheck disable=SC2016
+	rbenv_ln="$(grep -n '^type -a rbenv > /dev/null && eval "$(rbenv init -)"' ~/.zshrc |
+		cut -d':' -f1)"
+
+	# if both brew and rbenv are loaded in zshrc
+	# the order matters
+	# if rbenv is loaded first it wont find the command rbenv
+	# and thus not add the shims to the path
+	if [ "$rbenv_ln" -lt "$brew_ln" ]
+	then
+		if [ "$arg_fix" == "1" ]
+		then
+			if is_arm
+			then
+				# shellcheck disable=SC2016
+				echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+				eval "$(/opt/homebrew/bin/brew shellenv)"
+				warn "Warning: please restart your terminal for ruby to work"
+				exit 1
+			else
+				error "Error: fixing brew path is not supported on x86 yet"
+				error "       feel free to report it here if you run into the issue"
+				error "       https://github.com/ElvisDot/lewagon-setup/issues"
+				exit 1
+			fi
+		else
+			error "Error: brew is being added to the path after rbenv"
+			error "       this causes a wrong ruby version to be loaded"
+			error ""
+			error "       your brew is here ${_color_YELLOW}~/.zshrc$_color_red line ${_color_YELLOW}$brew_ln"
+			error "       your rbenv is here ${_color_YELLOW}~/.zshrc$_color_red line ${_color_YELLOW}$rbenv_ln"
+			error ""
+			error "       to fix it make sure brew is being loaded in the ~/.zprofile"
+			error "       or open the zshrc file and make sure the brew line is above the rbenv line"
+			error ""
+			error "       or run the doctor with $_color_WHITE--fix"
+			exit 1
+		fi
+	fi
+}
+
+function install_ruby() {
+	local set_version
+	set_version="$(rbenv versions | grep "set by.*.rbenv/version" | awk '{ print $2 }')"
+	if [ "$set_version" != "" ] && [ "$set_version" == "$(wanted_ruby_version)" ]
+	then
+		# todo: should we throw an error or warning here?
+		#       ruby is not found but rbenv claims to have set a version?
+		test
+	fi
+	local got_wanted
+	got_wanted="$(rbenv versions |
+		tr -d '*' |
+		awk '{ print $1 }' |
+		grep "^$(wanted_ruby_version)$")"
+	if [ "$got_wanted" == "$(wanted_ruby_version)" ]
+	then
+		if [ "$arg_fix" == "1" ]
+		then
+			log "Setting global ruby version to $_color_GREEN$(wanted_ruby_version)"
+			rbenv global "$(wanted_ruby_version)"
+		else
+			warn "Warning: set your global ruby version to $(wanted_ruby_version)"
+			warn "         using this command or run the doctor with $_color_WHITE--fix"
+			warn ""
+			warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
+			warn ""
+		fi
+		return
+	fi
+
+	log "Installing ruby $(wanted_ruby_version) this can take a while"
+	rbenv install "$(wanted_ruby_version)" || {
+		error "Error: installing ruby version $(wanted_ruby_version) failed";
+		error "       please report the issue here";
+		error "       https://github.com/ElvisDot/lewagon-setup/issues";
+		exit 1;
+	}
+	rbenv global "$(wanted_ruby_version)"
+}
+
 function check_ruby() {
 	if [ ! -x "$(command -v rbenv)" ]
 	then
@@ -624,13 +738,20 @@ function check_ruby() {
 	fi
 	if [ ! -x "$(command -v ruby)" ]
 	then
-		# todo: get ruby
+		install_ruby
 		return
 	fi
 	if [[ ! "$(command -v ruby)" =~ shims ]]
 	then
-		# todo: fix it
-		warn "Warning: ruby is not installed via rbenv"
+		# if it finds an issue it exits
+		# if it does not find an issue it silently returns
+		check_brew_in_path_after_rbenv_init
+
+		error "Error: your ruby is not in the rbenv shims folder"
+		error "       and the doctor does not know why"
+		error "       if this happens to you please report the issue here"
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		exit 1
 	fi
 
 	local ruby_vers
@@ -638,12 +759,17 @@ function check_ruby() {
 
 	if is_outdated_ruby "$ruby_vers"
 	then
-		warn "Warning: your ruby version $_color_RED$ruby_vers$_color_yellow is outdated"
-		warn "         the expected version is $_color_GREEN$(wanted_ruby_version)"
-		warn "         To fix it try running these commands"
-		warn ""
-		warn "         ${_color_WHITE}rbenv install $(wanted_ruby_version)"
-		warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
+		if [ "$arg_fix" == "1" ]
+		then
+			install_ruby
+		else
+			warn "Warning: your ruby version $_color_RED$ruby_vers$_color_yellow is outdated"
+			warn "         the expected version is $_color_GREEN$(wanted_ruby_version)"
+			warn "         To fix it try running these commands or the doctor with $_color_WHITE--fix"
+			warn ""
+			warn "         ${_color_WHITE}rbenv install $(wanted_ruby_version)"
+			warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
+		fi
 	fi
 }
 
