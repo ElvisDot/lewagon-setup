@@ -234,6 +234,14 @@ function detect_user() {
 	# grep -Ev '(^root:|^postgres:|nologin$|false$|sync$)' /etc/passwd | cut -d':' -f1 | head -n1
 }
 
+function password_note() {
+	echo 'echo "your password is 123"'
+	echo 'echo "to change it run this command:"'
+	echo 'echo ""'
+	echo 'echo "  passwd"'
+	echo 'echo ""'
+}
+
 function check_user_windows() {
 	is_windows || return
 	if [[ "$UID" != "0" ]] && [[ "$EUID" != "0" ]]
@@ -283,9 +291,16 @@ function check_user_windows() {
 			error "Error: failed to create user";
 			exit 1;
 		}
-		log "Now pick a password for your linux user"
-		log "Note you won't see what you are typing not even a *"
-		passwd "$username"
+
+
+		# deprecated interactive stuff
+
+		# log "Now pick a password for your linux user"
+		# log "Note you won't see what you are typing not even a *"
+		# passwd "$username"
+
+		echo 123 | passwd "$username" --stdin
+		password_note >> /home/"$username"/.zshrc
 	fi
 
 	if ! id "$username" | grep -q sudo
@@ -844,7 +859,22 @@ function run_dotfiles_install() {
 		exit 1
 	fi
 	cd "$dotfiles_dir"/dotfiles || { error "Error: something went wrong"; exit 1; }
+	local is_pass_note=0
+
+	if grep "password is 123" ~/.zshrc
+	then
+		is_pass_note=1
+	fi
+
 	zsh install.sh
+
+	if [ "$is_pass_note" == "1" ]
+	then
+		if ! grep "password is 123" ~/.zshrc
+		then
+			password_note >> ~/.zshrc
+		fi
+	fi
 }
 
 function check_dotfiles() {
