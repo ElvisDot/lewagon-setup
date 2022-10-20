@@ -1013,13 +1013,12 @@ function check_package_manager_programs() {
 	local prog
 	if is_mac && is_data
 	then
-		for prog in openssl tree ncdu xz
+		for prog in ncdu xz
 		do
 			[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 		done
 		# todo: check readline
-	elif is_data # linux/windows
-	then
+	else # linux/windows
 		for prog in unzip vim zsh tree
 		do
 			[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
