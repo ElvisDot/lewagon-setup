@@ -772,6 +772,10 @@ function check_ruby() {
 	if [ ! -x "$(command -v rbenv)" ]
 	then
 		install_rbenv
+		if [ ! -x "$(command -v rbenv)" ]
+		then
+			return
+		fi
 	fi
 	if [ ! -x "$(command -v ruby)" ]
 	then
