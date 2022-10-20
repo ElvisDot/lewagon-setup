@@ -455,22 +455,6 @@ function device_info() {
 	fi
 }
 
-function check_basics() {
-	if ! check_dns
-	then
-		check_internet
-	fi
-	if [ "$arg_full" == "1" ]
-	then
-		check_ssl
-	fi
-	check_shell
-	if is_windows || is_linux
-	then
-		check_user_windows
-	fi
-}
-
 function check_shell() {
 	if [[ "$SHELL" =~ zsh ]]
 	then
@@ -501,6 +485,23 @@ function check_shell() {
 		fi
 	fi
 }
+
+function check_basics() {
+	if ! check_dns
+	then
+		check_internet
+	fi
+	if [ "$arg_full" == "1" ]
+	then
+		check_ssl
+	fi
+	check_shell
+	if is_windows || is_linux
+	then
+		check_user_windows
+	fi
+}
+
 
 function check_vscode() {
 	if [ -x "$(command -v code)" ]
