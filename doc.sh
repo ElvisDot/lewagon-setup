@@ -784,11 +784,20 @@ function check_ruby() {
 		# if it does not find an issue it silently returns
 		check_brew_in_path_after_rbenv_init
 
-		error "Error: your ruby is not in the rbenv shims folder"
-		error "       and the doctor does not know why"
-		error "       if this happens to you please report the issue here"
-		error "       https://github.com/ElvisDot/lewagon-setup/issues"
-		exit 1
+		local rbenv_vers
+		rbenv_vers="$(rbenv version | awk '{ print $1 }')"
+		# if the rbenv version is set (so not the sys for empty version)
+		# but ruby is not in the path that means rbenv thinks you got ruby
+		# but ruby does not find it self in the shims PATH
+		# that is a unknown bug to me
+		if [ "$rbenv_vers" != "system" ] && [ "$rbenv_vers" == "" ]
+		then
+			error "Error: your ruby is not in the rbenv shims folder"
+			error "       and the doctor does not know why"
+			error "       if this happens to you please report the issue here"
+			error "       https://github.com/ElvisDot/lewagon-setup/issues"
+			exit 1
+		fi
 	fi
 
 	local ruby_vers
