@@ -672,7 +672,7 @@ function check_brew_in_path_after_rbenv_init() {
 		# it should be fine
 		return
 	fi
-	if grep "^[^#]*PATH=.*homebrew" ~/.zshrc
+	if ! grep "^[^#]*PATH=.*homebrew" ~/.zshrc
 	then
 		# if the command brew is found
 		# but we can not find the PATH manipulation in
