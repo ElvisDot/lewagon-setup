@@ -38,6 +38,27 @@ jobs:
       - name: Shellcheck
         run: find . -type f -name '*.sh' -print0 | xargs -0 shellcheck
 
+      - name: Error and warning format
+        run: |
+          if grep -i 'error "Error' doc.sh  | grep -qv 'error "Error: '
+          then
+            echo "Error: wrong error messages found"
+            echo "       the format has to be 'error "Error: message'"
+            echo "       if that is not matched the error counting breaks"
+            echo ""
+            echo ""
+            grep -i 'error "Error' doc.sh  | grep -v 'error "Error: '
+          fi
+          if grep -i 'warn "Warning' doc.sh  | grep -qv 'warn "Warning: '
+          then
+            echo "Error: wrong warning messages found"
+            echo "       the format has to be 'warn "Warning: message'"
+            echo "       if that is not matched the warning counting breaks"
+            echo ""
+            echo ""
+            grep -i 'warn "Warning' doc.sh  | grep -v 'warn "Warning: '
+          fi
+
       - name: Doctor should be non interactive
         run: |
           if grep -v "while.*read" doc.sh | grep -nE '^[^#]*(;|^| )*read($|;| )';

@@ -29,6 +29,9 @@ arg_unix_name=""
 
 bootcamp=unkown
 
+num_warnings=0
+num_errors=0
+
 # Auto say yes on new ssh connections when being prompted this
 # Are you sure you want to continue connecting (yes/no/[fingerprint])
 export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
@@ -143,11 +146,24 @@ function check_colors() {
 }
 
 function error() {
-	printf '%b[%b-%b]%b %s%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$1" "$_color_RESET"
+	local msg="$1"
+	# only the first print of every
+	# error section gets counted
+	# a multi line error is not multiple errors
+	if [[ "$msg" =~ Error: ]]
+	then
+		num_errors="$((num_errors + 1))"
+	fi
+	printf '%b[%b-%b]%b %s%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$msg" "$_color_RESET"
 }
 
 function warn() {
-	printf '%b[%b!%b]%b %b%b\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$1" "$_color_RESET"
+	local msg="$1"
+	if [[ "$msg" =~ Warning: ]]
+	then
+		num_warnings="$((num_warnings + 1))"
+	fi
+	printf '%b[%b!%b]%b %b%b\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$msg" "$_color_RESET"
 }
 
 function log() {
@@ -1225,6 +1241,12 @@ function main() {
 	fi
 	log "Hi I am the doctor. I am in a early stage of development."
 	log "This is still a experimental version."
+	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
+	then
+		log "✅ $_color_GREEN your system is healthy"
+	else
+		log "Summary warnings: $num_warnings errors: $num_errors"
+	fi
 }
 
 main
