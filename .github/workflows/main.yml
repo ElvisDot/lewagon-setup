@@ -48,6 +48,7 @@ jobs:
             echo ""
             echo ""
             grep -i 'error "Error' doc.sh  | grep -v 'error "Error: '
+            exit 1
           fi
           if grep -i 'warn "Warning' doc.sh  | grep -qv 'warn "Warning: '
           then
@@ -57,6 +58,7 @@ jobs:
             echo ""
             echo ""
             grep -i 'warn "Warning' doc.sh  | grep -v 'warn "Warning: '
+            exit 1
           fi
 
       - name: Doctor should be non interactive
@@ -64,6 +66,7 @@ jobs:
           if grep -v "while.*read" doc.sh | grep -nE '^[^#]*(;|^| )*read($|;| )';
           then
             echo "Error: found use of read keyword. The doctor should be non interactive";
+            exit 1
           fi
 
   test-macOS:
