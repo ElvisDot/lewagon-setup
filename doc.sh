@@ -1239,8 +1239,6 @@ function main() {
 	then
 		check_docker
 	fi
-	log "Hi I am the doctor. I am in a early stage of development."
-	log "This is still a experimental version."
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
 	then
 		log "✅ $_color_GREEN your system is healthy"
