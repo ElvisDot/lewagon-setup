@@ -612,7 +612,11 @@ function install_rbenv() {
 		fi
 	fi
 
-	rvm implode &>/dev/null && sudo rm -rf ~/.rvm
+	rvm implode &>/dev/null
+	if [ -d ~/.rvm ]
+	then
+		sudo rm -rf ~/.rvm
+	fi
 
 	if [ "$arg_fix" == "0" ]
 	then
@@ -689,14 +693,21 @@ function check_brew_in_path_after_rbenv_init() {
 		error "Error: please install brew and restart your terminal"
 		exit 1
 	fi
-	if grep "^[^#]*PATH=.*homebrew" ~/.zprofile
+	# it can either be
+	#
+	# eval "$(/opt/homebrew/bin/brew shellenv)"
+	#
+	# or directly
+	#
+	# PATH="$PATH:/opt/homebrew/bin"
+	if grep "^[^#]*PATH=.*homebrew" ~/.zprofile || grep "^[^#]*eval.*/brew shellenv" ~/.zprofile
 	then
 		# zprofile is being loaded before zshrc
 		# so if brew is in zprofile and rbenv in zshrc
 		# it should be fine
 		return
 	fi
-	if ! grep "^[^#]*PATH=.*homebrew" ~/.zshrc
+	if ! grep "^[^#]*PATH=.*homebrew" ~/.zshrc && ! grep "^[^#]*eval.*/brew shellenv" ~/.zshrc
 	then
 		# if the command brew is found
 		# but we can not find the PATH manipulation in
@@ -708,9 +719,24 @@ function check_brew_in_path_after_rbenv_init() {
 		error "       https://github.com/ElvisDot/lewagon-setup/issues"
 		exit 1
 	fi
-	local brew_ln
+	local brew_ln=-1
 	local rbenv_ln
-	brew_ln="$(grep -n "^[^#]*PATH=.*homebrew" ~/.zshrc | cut -d':' -f1)"
+	if grep "^[^#]*PATH=.*homebrew" ~/.zshrc
+	then
+		brew_ln="$(grep -n "^[^#]*PATH=.*homebrew" ~/.zshrc | cut -d':' -f1)"
+	else
+		brew_ln="$(grep -n "^[^#]*eval.*/brew shellenv" ~/.zshrc | cut -d':' -f1)"
+	fi
+	# this should not happen
+	# we should have checked the zshrc file first
+	# shellcheck disable=SC2016
+	if ! grep '^type -a rbenv > /dev/null && eval "$(rbenv init -)"' ~/.zshrc
+	then
+		error "Error: did not find rbenv in your ~/.zshrc"
+		error "       please report this issue here"
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		exit 1
+	fi
 	# shellcheck disable=SC2016
 	rbenv_ln="$(grep -n '^type -a rbenv > /dev/null && eval "$(rbenv init -)"' ~/.zshrc |
 		cut -d':' -f1)"
