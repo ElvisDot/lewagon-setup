@@ -1146,6 +1146,30 @@ function check_database() {
 	fi
 }
 
+function check_sip_mac() {
+	# SIP - System Integrity Protection
+	#
+	# https://www.kolide.com/features/checks/mac-system-integrity-protection
+	# https://github.com/rbenv/ruby-build/issues/2073#issuecomment-1335651657
+	#
+	# SIP should be on for security
+	# and in some niche edge cases
+	# SIP being off might also break the ruby build
+	# but also for the data camp is worth an alert
+	if [ ! -x "$(command -v csrutil)" ]
+	then
+		# should we throw a warning here?
+		return
+	fi
+	if [ "$(csrutil status)" == "enabled" ]
+	then
+		return
+	fi
+	warn "WARNING: System Integrity Protection is OFF"
+	warn "         please turn on SIP following this article"
+	warn "         https://www.kolide.com/features/checks/mac-system-integrity-protection"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1153,6 +1177,7 @@ function main() {
 	if is_mac
 	then
 		check_brew
+		check_sip_mac
 	fi
 	detect_bootcamp
 	check_vscode
