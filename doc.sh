@@ -1207,7 +1207,7 @@ function check_sip_mac() {
 	then
 		return
 	fi
-	warn "WARNING: System Integrity Protection is OFF"
+	warn "Warning: System Integrity Protection is OFF"
 	warn "         please turn on SIP following this article"
 	warn "         https://www.kolide.com/features/checks/mac-system-integrity-protection"
 }
