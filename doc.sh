@@ -1161,7 +1161,7 @@ function check_sip_mac() {
 		# should we throw a warning here?
 		return
 	fi
-	if [ "$(csrutil status)" == "enabled" ]
+	if [ "$(csrutil status)" == "System Integrity Protection status: enabled." ]
 	then
 		return
 	fi
