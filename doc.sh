@@ -1291,7 +1291,61 @@ function check_git_and_github_email_match() {
 		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
 		exit 1
 	fi
+}
 
+function check_ready_commit_email() {
+	# Kitt is waiting for the student
+	# to push a commit with the correct email
+	# set in the fullstack-challenges repo
+	if ! gh auth status &> /dev/null
+	then
+		return
+	fi
+	local ready_email
+	local github_email
+	local code_dir_username
+	code_dir_username="$(basename "$(get_code_user_dir)")"
+	local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
+	if [ ! -d "$challenges_dir" ]
+	then
+		return
+	fi
+	cd "$challenges_dir" || return
+	github_email="$(gh api user | jq -r '.email')"
+	ready_email="$(
+		git log \
+			-s \
+			--pretty=format:'%ae %s' \
+			--perl-regexp \
+			--grep "(New commit with fixed email|I am so ready)"
+			head -n1 | \
+			awk '{print $1 }')"
+	if [ "$ready_email" == "$github_email" ]
+	then
+		return
+	fi
+	warn 'Warning: your github email is not in the "I am so ready" commit'
+	warn "         ready  email: $_color_RED$ready_email"
+	warn "         github email: $_color_RED$github_email"
+	if [ "$arg_fix" == "1" ]
+	then
+		log "Sending ready commit with email '$github_email' ..."
+		git config --global user.email "$github_email"
+		git commit --allow-empty -m "New commit with fixed email"
+		git push origin master
+	else
+		warn ""
+		warn "         try running these commands to fix it:"
+		warn ""
+		warn "         ${_color_WHITE}cd ~/code/*/fullstack-challenges"
+		warn "         ${_color_WHITE}git config --global user.email \"$github_email\""
+		warn "         ${_color_WHITE}git commit --allow-empty -m \"New commit with fixed email\""
+		warn "         ${_color_WHITE}git push origin master"
+		warn ""
+		warn "         to fix it automatically"
+		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
+		exit 1
+	fi
 }
 
 function main() {
@@ -1315,6 +1369,7 @@ function main() {
 	fi
 	check_github_name_matches
 	check_git_and_github_email_match
+	check_ready_commit_email
 	if is_web
 	then
 		check_ruby
