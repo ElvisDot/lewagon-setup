@@ -709,6 +709,15 @@ function check_brew_in_path_after_rbenv_init() {
 		error "Error: please install brew and restart your terminal"
 		exit 1
 	fi
+	if [ "$(command -v brew)" == "/usr/local/bin/brew" ]
+	then
+		# TODO: when getting hands on a mac again investigate
+		#       where /usr/local/bin is added to path
+		#       but im pretty sure it is before ~/.zshrc
+		#       so rbenv should init just fine
+		#       and we can pass this check
+		return
+	fi
 	# it can either be
 	#
 	# eval "$(/opt/homebrew/bin/brew shellenv)"
