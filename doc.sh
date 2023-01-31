@@ -1230,7 +1230,7 @@ function check_github_name_matches() {
 	code_dir_username="$(basename "$(get_code_user_dir)")"
 	if [ "$code_dir_username" == "" ]
 	then
-		return
+		return 1
 	fi
 	local github_username=''
 	if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
@@ -1239,14 +1239,16 @@ function check_github_name_matches() {
 	fi
 	if [ "$github_username" == "" ]
 	then
-		return
+		return 1
 	fi
 	if [ "$github_username" != "$code_dir_username" ]
 	then
 		warn "Warning: there are two usernames found"
 		warn "         one in your ~/code dir: $_color_RED$code_dir_username"
 		warn "         one  authed on  github: $_color_RED$github_username"
+		return 0
 	fi
+	return 1
 }
 
 function check_git_and_github_email_match() {
@@ -1289,7 +1291,6 @@ function check_git_and_github_email_match() {
 		warn ""
 		warn "         to fix it automatically"
 		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
-		exit 1
 	fi
 }
 
@@ -1317,7 +1318,7 @@ function check_ready_commit_email() {
 			-s \
 			--pretty=format:'%ae %s' \
 			--perl-regexp \
-			--grep "(New commit with fixed email|I am so ready)"
+			--grep "(New commit with fixed email|I am so ready)" | \
 			head -n1 | \
 			awk '{print $1 }')"
 	if [ "$ready_email" == "$github_email" ]
@@ -1348,6 +1349,24 @@ function check_ready_commit_email() {
 	fi
 }
 
+function check_github_org_invite_accept() {
+	if ! gh auth status &> /dev/null
+	then
+		return
+	fi
+	if gh api user/orgs | jq '.[].login' | grep -qi '"lewagon"'
+	then
+		return
+	fi
+	warn "Warning: lewagon organisation not found in your github account"
+	warn "         open the following link in your browser and accept"
+	warn "         the invite"
+	warn ""
+	warn "         https://github.com/orgs/lewagon/invitation"
+	warn ""
+	warn "         if there is no invite ask your batch manager"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1367,13 +1386,20 @@ function main() {
 		error "Error: missing dotfiles aborting"
 		exit 1
 	fi
-	check_github_name_matches
-	check_git_and_github_email_match
-	check_ready_commit_email
+	if ! check_github_name_matches
+	then
+		# those two checks
+		# assume you are authed
+		# to the correct github account
+		# using the gh cli
+		check_github_org_invite_accept
+		check_git_and_github_email_match
+	fi
 	if is_web
 	then
 		check_ruby
 		check_database
+		check_ready_commit_email
 	elif is_data
 	then
 		check_docker
@@ -1383,6 +1409,7 @@ function main() {
 		log "✅$_color_GREEN your system is healthy"
 	else
 		log "Summary warnings: $num_warnings errors: $num_errors"
+		exit 1
 	fi
 }
 
