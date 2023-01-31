@@ -1362,7 +1362,6 @@ function check_ready_commit_email() {
 		warn ""
 		warn "         to fix it automatically"
 		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
-		exit 1
 	fi
 }
 
