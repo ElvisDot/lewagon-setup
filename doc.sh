@@ -1259,6 +1259,14 @@ function check_git_and_github_email_match() {
 		return
 	fi
 	github_email="$(gh api user | jq -r '.email')"
+	if [ "$github_email" == "null" ]
+	then
+		# TODO: find another way to check
+		#       if it can't find the email here
+		#       this happens when the user
+		#       sets the email to private in the account settings
+		return
+	fi
 	git_email="$(git config --global user.email)"
 	if [ "$github_email" == "$git_email" ]
 	then
