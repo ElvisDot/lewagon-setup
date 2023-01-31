@@ -889,8 +889,7 @@ function check_ruby() {
 	fi
 }
 
-function run_dotfiles_install() {
-	local dir
+function get_code_user_dir() {
 	local dotfiles_dir=''
 	for dir in ~/code/*/
 	do
@@ -900,6 +899,13 @@ function run_dotfiles_install() {
 
 		dotfiles_dir="$dir"
 	done
+	echo "$dotfiles_dir"
+}
+
+function run_dotfiles_install() {
+	local dir
+	local dotfiles_dir=''
+	dotfiles_dir="$(get_code_user_dir)"
 	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
 	then
 		error "Error: you are missing the dotfiles folder"
@@ -959,12 +965,13 @@ function check_dotfiles() {
 	then
 		run_dotfiles_install
 	fi
-	local d
 	local found_dotfiles=0
-	for d in ~/code/*/dotfiles
-	do
-		[[ -d "$d" ]] && found_dotfiles=1
-	done
+	if [ "$(get_code_user_dir)" != "" ]
+	then
+		found_dotfiles=1
+	fi
+	# TODO: add comment explaining this line
+	#       i do not understand it :D
 	if [ ! -f ~/.zshrc ]
 	then
 		found_dotfiles=0
@@ -1212,6 +1219,36 @@ function check_sip_mac() {
 	warn "         https://www.kolide.com/features/checks/mac-system-integrity-protection"
 }
 
+function check_github_name_matches() {
+	# check if the ssh key is logged in
+	# to the same github username
+	# as the folder name ~/code/username
+	#
+	# this might not break the setup but
+	# is a good indicator something is weird
+	local code_dir_username
+	code_dir_username="$(basename "$(get_code_user_dir)")"
+	if [ "$code_dir_username" == "" ]
+	then
+		return
+	fi
+	local github_username=''
+	if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
+	then
+		github_username="${BASH_REMATCH[1]}"
+	fi
+	if [ "$github_username" == "" ]
+	then
+		return
+	fi
+	if [ "$github_username" != "$code_dir_username" ]
+	then
+		warn "Warning: there are two usernames found"
+		warn "         one in your ~/code dir: $_color_RED$code_dir_username"
+		warn "         one  authed on  github: $_color_RED$github_username"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1231,6 +1268,7 @@ function main() {
 		error "Error: missing dotfiles aborting"
 		exit 1
 	fi
+	check_github_name_matches
 	if is_web
 	then
 		check_ruby
@@ -1241,7 +1279,7 @@ function main() {
 	fi
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
 	then
-		log "✅ $_color_GREEN your system is healthy"
+		log "✅$_color_GREEN your system is healthy"
 	else
 		log "Summary warnings: $num_warnings errors: $num_errors"
 	fi
