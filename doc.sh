@@ -1409,7 +1409,6 @@ function main() {
 		log "✅$_color_GREEN your system is healthy"
 	else
 		log "Summary warnings: $num_warnings errors: $num_errors"
-		exit 1
 	fi
 }
 
