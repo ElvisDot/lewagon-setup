@@ -1249,6 +1249,51 @@ function check_github_name_matches() {
 	fi
 }
 
+function check_git_and_github_email_match() {
+	local github_email
+	local git_email
+	if ! gh auth status &> /dev/null
+	then
+		return
+	fi
+	github_email="$(gh api user | jq -r '.email')"
+	git_email="$(git config --global user.email)"
+	if [ "$github_email" == "$git_email" ]
+	then
+		return
+	fi
+	warn "Warning: your git email does not match your github one"
+	warn "            git: $_color_RED$git_email"
+	warn "         github: $_color_RED$github_email"
+	if [ "$arg_fix" == "1" ]
+	then
+		log "updating git email to be '$github_email' ..."
+		git config --global user.email "$github_email"
+		local code_dir_username
+		code_dir_username="$(basename "$(get_code_user_dir)")"
+		local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
+		if [ -d "$challenges_dir" ]
+		then
+			cd "$challenges_dir" || return
+			git commit --allow-empty -m "New commit with fixed email"
+			git push origin master
+		fi
+	else
+		warn ""
+		warn "         try running these commands to fix it:"
+		warn ""
+		warn "         ${_color_WHITE}cd ~/code/*/fullstack-challenges"
+		warn "         ${_color_WHITE}git config --global user.email \"$github_email\""
+		warn "         ${_color_WHITE}git commit --allow-empty -m \"New commit with fixed email\""
+		warn "         ${_color_WHITE}git push origin master"
+		warn ""
+		warn "         to fix it automatically"
+		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
+		exit 1
+	fi
+
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1269,6 +1314,7 @@ function main() {
 		exit 1
 	fi
 	check_github_name_matches
+	check_git_and_github_email_match
 	if is_web
 	then
 		check_ruby
