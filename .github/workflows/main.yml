@@ -35,6 +35,9 @@ jobs:
       - name: Run the doctor (full/verbose)
         run: GITHUB_CI=1 ./doc.sh --full -vvv
 
+      # - name: Run docker tests
+      #   run: ./test/test.sh
+
       - name: Shellcheck
         run: find . -type f -name '*.sh' -print0 | xargs -0 shellcheck
 
