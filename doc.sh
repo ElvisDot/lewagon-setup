@@ -1383,6 +1383,52 @@ function check_github_org_invite_accept() {
 	warn "         if there is no invite ask your batch manager"
 }
 
+function assert_num_file_lines() {
+	local filename="$1"
+	local min_lines="$2"
+	local max_lines="$3"
+	local file_lines
+	[[ -f "$filename" ]] || return
+
+	file_lines="$(wc -l "$filename" | cut -d ' ' -f1)"
+	if [ "$file_lines" -lt "$min_lines" ]
+	then
+		warn "Warning: there are less lines in $filename than expected"
+		warn "         expected at least: $min_lines"
+		warn "                       got: $file_lines"
+	fi
+	if [ "$file_lines" -gt "$max_lines" ]
+	then
+		warn "Warning: there are more lines in $filename than expected"
+		warn "         expected at most: $max_lines"
+		warn "                      got: $file_lines"
+	fi
+}
+
+function assert_num_dupe_lines() {
+	local filename="$1"
+	local max_dupes="$2"
+	[[ -f "$filename" ]] || return
+
+	local num_dupes
+	num_dupes="$(sort "$filename" | uniq -D | wc -l)"
+	if [ "$num_dupes" -gt "$max_dupes" ]
+	then
+		warn "Warning: there are $_color_RED$num_dupes$_color_yellow duplicated lines in"
+		warn "         the file $filename"
+	fi
+}
+
+function check_zshrc_contents() {
+	assert_num_file_lines ~/.zshrc 60 110
+	assert_num_dupe_lines ~/.zshrc 6
+}
+
+function check_zprofile_contents() {
+	assert_num_file_lines ~/.zprofile 3 15
+	assert_num_dupe_lines ~/.zprofile 5
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1411,6 +1457,8 @@ function main() {
 		check_github_org_invite_accept
 		check_git_and_github_email_match
 	fi
+	check_zshrc_contents
+	check_zprofile_contents
 	if is_web
 	then
 		check_ruby
