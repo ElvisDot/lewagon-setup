@@ -448,7 +448,7 @@ function device_info() {
 	log "Detected $_color_green$detected_os$_color_RESET $detected_distro $(is_arm && echo -e "$_color_green(arm)$_color_RESET")"
 	if ! is_mac && ! is_ubuntu
 	then
-		warn "Warning: LeWagon setup recommends Ubuntu"
+		warn "Warning: Le Wagon setup recommends Ubuntu"
 		warn "         other distros are fine if you know what you are doing"
 	elif is_mac
 	then
@@ -1411,7 +1411,7 @@ function assert_num_dupe_lines() {
 	[[ -f "$filename" ]] || return
 
 	local num_dupes
-	num_dupes="$(sort "$filename" | uniq -D | wc -l)"
+	num_dupes="$(sort "$filename" | uniq -D | awk NF | wc -l)"
 	if [ "$num_dupes" -gt "$max_dupes" ]
 	then
 		warn "Warning: there are $_color_RED$num_dupes$_color_yellow duplicated lines in"
@@ -1419,12 +1419,49 @@ function assert_num_dupe_lines() {
 	fi
 }
 
+function check_zshrc_plugins() {
+	local num_plugin_lists
+	[[ -f ~/.zshrc ]] || return
+
+	num_plugin_lists="$(grep -c "^[[:space:]]*plugins=" ~/.zshrc)"
+	if [ "$num_plugin_lists" == "0" ]
+	then
+		warn "Warning: the ${_color_WHITE}plugins=()$_color_yellow list is missing in your ~/.zshrc"
+		warn "         you might be missing out on some fancy plugins Le Wagon recommends"
+		return
+	elif [ "$num_plugin_lists" -gt "1" ]
+	then
+		warn "Warning: the ${_color_WHITE}plugins=()$_color_yellow list"
+		warn "         is found $_color_RED$num_plugin_lists$_color_yellow times in your ~/.zshrc"
+		warn "         it should only be there once"
+		return
+	fi
+	local plugin_list
+	plugin_list="$(grep "[[:space:]]*plugins=" ~/.zshrc)"
+	plugin_list_line="$(grep -n "[[:space:]]*plugins=" ~/.zshrc | cut -d ':' -f1)"
+	# Using bash eval to check the zshrc plugin list
+	# is technically not correct.
+	# But it does the job to detect most of the student
+	# fckups. For example parenthesis missplacement.
+	if ! eval "$plugin_list" &> /dev/null;
+	then
+		warn "Warning: there might be a syntax error in the ${_color_WHITE}plugins=()$_color_yellow list"
+		warn "         please have a look at the $_color_RED$HOME/.zshrc$_color_yellow file"
+		warn "         in line $_color_RED$plugin_list_line"
+	fi
+}
+
 function check_zshrc_contents() {
+	[[ -f ~/.zshrc ]] || return
+
 	assert_num_file_lines ~/.zshrc 60 110
 	assert_num_dupe_lines ~/.zshrc 6
+	check_zshrc_plugins
 }
 
 function check_zprofile_contents() {
+	[[ -f ~/.zprofile ]] || return
+
 	assert_num_file_lines ~/.zprofile 3 15
 	assert_num_dupe_lines ~/.zprofile 5
 }
