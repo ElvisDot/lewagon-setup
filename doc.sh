@@ -1330,6 +1330,12 @@ function check_ready_commit_email() {
 	fi
 	cd "$challenges_dir" || return
 	github_email="$(gh api user | jq -r '.email')"
+	if [ "$github_email" == "null" ]
+	then
+		# email is private no need to compare
+		# TODO: find a way to get email anyways
+		return
+	fi
 	ready_email="$(
 		git log \
 			-s \
