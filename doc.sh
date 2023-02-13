@@ -1390,7 +1390,7 @@ function assert_num_file_lines() {
 	local file_lines
 	[[ -f "$filename" ]] || return
 
-	file_lines="$(wc -l "$filename" | cut -d ' ' -f1)"
+	file_lines="$(wc -l "$filename" | awk '{ print $1 }')"
 	if [ "$file_lines" -lt "$min_lines" ]
 	then
 		warn "Warning: there are less lines in $filename than expected"
