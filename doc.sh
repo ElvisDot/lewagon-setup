@@ -46,6 +46,22 @@ function show_help() {
 	echo "  --unix-name <name>    Pick your mac/linux username"
 }
 
+function wanted_node_version() {
+	echo 'v16.15.1'
+}
+
+function wanted_ruby_version() {
+	# We could get the latest version from here
+	#
+	# curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep "^REQUIRED_RUBY_VERSION" | cut -d'"' -f2
+	#
+	# but doing http requests is slow
+	# so maybe add this to the CI
+	# or only if some last_updated variable
+	# is more than x days ago
+	echo "3.1.2"
+}
+
 function parse_args() {
 	local flags
 	local flag
@@ -672,18 +688,6 @@ function install_rbenv() {
 	error ""
 	error "       https://github.com/ElvisDot/lewagon-setup/issues"
 	exit 1
-}
-
-function wanted_ruby_version() {
-	# We could get the latest version from here
-	#
-	# curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep "^REQUIRED_RUBY_VERSION" | cut -d'"' -f2
-	#
-	# but doing http requests is slow
-	# so maybe add this to the CI
-	# or only if some last_updated variable
-	# is more than x days ago
-	echo "3.1.2"
 }
 
 function is_outdated_ruby() {
@@ -1470,6 +1474,29 @@ function check_zprofile_contents() {
 
 	assert_num_file_lines ~/.zprofile 3 15
 	assert_num_dupe_lines ~/.zprofile 5
+}
+
+function check_node_version() {
+	if [ ! -x "$(command -v node)" ]
+	then
+		# TODO: install it?
+		return
+	fi
+	if ! grep -F '.nvm' | command -v node
+	then
+		warn "Warning: node does not seem to be installed with nvm"
+		return
+	fi
+
+	# TODO: uncomment this as soon as the version check is future proof
+
+	# local node_version
+	# local expected_version="$(wanted_node_version)"
+	# node_version="$(node -v)"
+	# if [ "$node_version" != "$expected_version" ]
+	# then
+	# 	warn "Warning: expected node version '$expected_version' got '$node_version'"
+	# fi
 }
 
 function main() {
