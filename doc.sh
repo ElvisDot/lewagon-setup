@@ -703,7 +703,10 @@ function is_outdated_ruby() {
 		return 1
 	fi
 
-	if ! sort --help | grep -q -- "[[:space:]]-V[^a-z]"
+	# macOS:
+	# Usage: sort [-bcCdfigMmnrsuz] [-kPOS1[,POS2] ... ] [+POS1 [-POS2]] [-S memsize] [-T tmpdir] [-t separator] [-o outfile] [--batch-size size] [--files0-from file] [--heapsort] [--mergesort] [--radixsort] [--qsort] [--mmap] [--parallel thread_no] [--human-numeric-sort] [--version-sort] [--random-sort [--random-source file]] [--compress-program program] [file ...]
+
+	if ! sort --help | grep -qE -- "([[:space:]]-V[^a-z]|--version-sort)"
 	then
 		warn "Warning: failed to check ruby version (sort -V not supported)"
 		warn "         this is an issue with the doctor please report it here"
