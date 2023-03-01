@@ -691,14 +691,36 @@ function install_rbenv() {
 }
 
 function is_outdated_ruby() {
-	local check="$1"
-	local wanted
-	wanted="$(wanted_ruby_version)"
-	# strip dots and turn it into a comparable number
-	# 3.1.2 -> 312
-	wanted="${wanted//./}"
-	check="${check//./}"
-	[[ "$check" -lt "$wanted" ]] && return 0
+	local ruby_vers
+	ruby_vers="$(ruby -e "puts RUBY_VERSION" 2>/dev/null)"
+
+	if ! [[ "$ruby_vers" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]
+	then
+		warn "Warning: failed to parse ruby version '$ruby_vers'"
+		# if we do not detect semver we count it as outdated
+		# should technically even support but who knows truffleruby, mruby or jruby
+		# some custom ruby version *might* fail in that case we claim its outdated
+		return 1
+	fi
+
+	if ! sort --help | grep -q -- "[[:space:]]-V[^a-z]"
+	then
+		warn "Warning: failed to check ruby version (sort -V not supported)"
+		warn "         this is an issue with the doctor please report it here"
+		warn ""
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return 1
+	fi
+
+	local latest
+	# get latest version of the list "current" and "wanted"
+	# sort -V supports semantic versioning sort
+	# using tail -n1 we get the latest
+	latest="$(printf '%s\n%s\n' "$(wanted_ruby_version)" "$ruby_vers" | sort -V | tail -n1)"
+
+	# if we are the wanted version we are good
+	# but also if we are more recent than the wanted version we are good
+	[[ "$ruby_vers" != "$latest" ]] && return 0
 	return 1
 }
 
@@ -883,15 +905,14 @@ function check_ruby() {
 		fi
 	fi
 
-	local ruby_vers
-	ruby_vers="$(ruby -e "puts RUBY_VERSION" 2>/dev/null)"
-
-	if is_outdated_ruby "$ruby_vers"
+	if is_outdated_ruby
 	then
 		if [ "$arg_fix" == "1" ]
 		then
 			install_ruby
 		else
+			local ruby_vers
+			ruby_vers="$(ruby -e "puts RUBY_VERSION" 2>/dev/null)"
 			warn "Warning: your ruby version $_color_RED$ruby_vers$_color_yellow is outdated"
 			warn "         the expected version is $_color_GREEN$(wanted_ruby_version)"
 			warn "         To fix it try running these commands or the doctor with $_color_WHITE--fix"
