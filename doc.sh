@@ -373,6 +373,16 @@ function check_brew() {
 		fi
 
 		# brew is installed but not in path
+		if [ ! -f /opt/homebrew/bin/brew ]
+		then
+			# TODO: could it also have it installed to another location?
+			error "Error: Unexpected brew install. Try restarting your terminal"
+			error "       if that does not help please report the issue here"
+			error ""
+			error "       https://github.com/ElvisDot/lewagon-setup/issues"
+			error ""
+			exit 1
+		fi
 		if ! grep 'opt/homebrew' ~/.zprofile
 		then
 			# shellcheck disable=SC2016
@@ -388,6 +398,17 @@ function check_brew() {
 
 		# x86 should not have path issues and even if
 		# its not that common since all new macs are arm
+	fi
+	if [ -x "$(command -v brew)" ]
+	then
+		# there is no need to diagnose or install anything if
+		# brew is not installed
+		error "Error: Failed to install brew. Try restarting your terminal"
+		error "       if that does not help please report the issue here"
+		error ""
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		error ""
+		exit 1
 	fi
 }
 
