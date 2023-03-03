@@ -1472,6 +1472,10 @@ function assert_num_dupe_lines() {
 	local max_dupes="$2"
 	[[ -f "$filename" ]] || return
 
+	# TODO: find portable `uniq -D` for mac
+	#       https://github.com/ElvisDot/lewagon-setup/issues/4
+	is_mac && return
+
 	local num_dupes
 	num_dupes="$(sort "$filename" | uniq -D | awk NF | wc -l)"
 	if [ "$num_dupes" -gt "$max_dupes" ]
