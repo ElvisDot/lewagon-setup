@@ -1223,7 +1223,8 @@ function check_package_manager_programs() {
 }
 
 function check_database() {
-	# todo: check that the user was created and its enabled
+	# TODO: check that the user was created and its enabled
+	# TODO: persist postgres start command on wsl in zshrc
 	if is_mac
 	then
 		if [ ! -x "$(command -v sqlite3)" ]
@@ -1232,8 +1233,8 @@ function check_database() {
 		fi
 		if [ ! -x "$(command -v psql)" ]
 		then
-			brew install postgresql
-			brew services start postgresql
+			brew install postgresql@14
+			brew services start postgresql@14
 		fi
 	else # Windows/Linux
 		if [ ! -x "$(command -v sqlite3)" ]
