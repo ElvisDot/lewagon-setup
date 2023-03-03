@@ -32,6 +32,20 @@ bootcamp=unkown
 num_warnings=0
 num_errors=0
 
+# straight copy from the homebrew install script
+# https://github.com/Homebrew/install/blob/95648ef45c8d59a44fa4ab8f29cdcf17d6ec48ac/install.sh#L127-L138
+UNAME_MACHINE="$(/usr/bin/uname -m)"
+if [[ "${UNAME_MACHINE}" == "arm64" ]]
+then
+	# On ARM macOS, this script installs to /opt/homebrew only
+	HOMEBREW_PREFIX="/opt/homebrew"
+	# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
+else
+	# On Intel macOS, this script installs to /usr/local only
+	HOMEBREW_PREFIX="/usr/local"
+	# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
+fi
+
 # Auto say yes on new ssh connections when being prompted this
 # Are you sure you want to continue connecting (yes/no/[fingerprint])
 export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
@@ -365,17 +379,15 @@ function check_brew() {
 		# brew found in path all good
 		return
 	fi
-	if is_arm
-	then
-		if [ ! -f /opt/homebrew/bin/brew ]
-		then
-			/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-		fi
 
-		# brew is installed but not in path
-		if [ ! -f /opt/homebrew/bin/brew ]
+	if [ ! -f ${HOMEBREW_PREFIX}/bin/brew ]
+	then
+		# install brew
+		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+		# failed install
+		if [ ! -f ${HOMEBREW_PREFIX}/bin/brew ]
 		then
-			# TODO: could it also have it installed to another location?
 			error "Error: Unexpected brew install. Try restarting your terminal"
 			error "       if that does not help please report the issue here"
 			error ""
@@ -383,32 +395,26 @@ function check_brew() {
 			error ""
 			exit 1
 		fi
-		if ! grep 'opt/homebrew' ~/.zprofile
-		then
-			# shellcheck disable=SC2016
-			echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-			eval "$(/opt/homebrew/bin/brew shellenv)"
-			warn "Warning: please restart your terminal for brew to work"
-		fi
-	else # x86
-		if [ ! -f /usr/local/bin/brew ]
-		then
-			/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-		fi
-
-		# x86 should not have path issues and even if
-		# its not that common since all new macs are arm
 	fi
+
+	persist_brew_in_path
+
 	if [ -x "$(command -v brew)" ]
 	then
-		# there is no need to diagnose or install anything if
-		# brew is not installed
-		error "Error: Failed to install brew. Try restarting your terminal"
-		error "       if that does not help please report the issue here"
-		error ""
-		error "       https://github.com/ElvisDot/lewagon-setup/issues"
-		error ""
-		exit 1
+		# monkey patch brew into PATH for the runtime of the doctor
+		# to avoid user interaction (terminal restart/exec zsh/source rc file)
+		eval "$(${HOMEBREW_PREFIX}/bin/brew shellenv)"
+		if [ -x "$(command -v brew)" ]
+		then
+			# there is no need to diagnose or install anything if
+			# brew is not installed
+			error "Error: Failed to install brew. Try restarting your terminal"
+			error "       if that does not help please report the issue here"
+			error ""
+			error "       https://github.com/ElvisDot/lewagon-setup/issues"
+			error ""
+			exit 1
+		fi
 	fi
 }
 
@@ -1542,6 +1548,40 @@ function check_node_version() {
 	# then
 	# 	warn "Warning: expected node version '$expected_version' got '$node_version'"
 	# fi
+}
+
+function persist_brew_in_path() {
+	is_mac || return
+
+	# hardcoding .zprofile here is a conscious decision
+	# it leaves non zsh shell setups in a broken state
+	# such as bash, fish etc
+	#
+	# this script is not intended to fix/support custom setups
+	# but to ensure this device is setup the le wagon intended way
+	local shell_profile
+	shell_profile="${HOME}/.zprofile"
+
+	if ! grep -qs "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\"" "${shell_profile}"
+	then
+		local fix_brew_cmd
+		fix_brew_cmd="(echo; echo 'eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\"') >> ${shell_profile}"
+		if [ "$arg_fix" == "1" ]
+		then
+			log "persisting brew in PATH ..."
+			warn "Warning: you need to restart your terminal"
+			warn "         for brew to work properly"
+			eval "$fix_brew_cmd"
+		else
+			warn "Warning: brew does not seem presistet in your PATH"
+			warn "         verify that the command ${_color_WHITE}brew$_color_yellow still works"
+			warn "         when opening a new terminal tab. If it does not you can fix it using"
+			warn "         this command or run the doctor with $_color_WHITE--fix"
+			warn ""
+			warn "         ${_color_WHITE}$fix_brew_cmd"
+			warn ""
+		fi
+	fi
 }
 
 function main() {
