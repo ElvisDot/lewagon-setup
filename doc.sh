@@ -680,10 +680,28 @@ function install_rbenv() {
 		fi
 	fi
 
-	rvm implode &>/dev/null
-	if [ -d ~/.rvm ]
+	if [ -d ~/.rvm ] || [ -x "$(command -v rvm)" ]
 	then
-		sudo rm -rf ~/.rvm
+		if [ "$arg_fix" == "1" ]
+		then
+			rvm implode &>/dev/null
+			if [ -d ~/.rvm ]
+			then
+				sudo rm -rf ~/.rvm
+			fi
+		else
+			# this is not redundant with the
+			# check_rvm function because
+			# it only runs if we install a missing rbenv
+			# this will not be printed if both rbenv and rvm
+			# are installed
+			warn "Warning: found rvm! You might want to uninstall that"
+			warn ""
+			warn "         ${_color_WHITE}rvm implode"
+			warn "         ${_color_WHITE}rm -rf ~/.rvm"
+			warn ""
+			warn "         or run the doctor with $_color_WHITE--fix"
+		fi
 	fi
 
 	if [ "$arg_fix" == "0" ]
@@ -1737,6 +1755,27 @@ function check_disk_space() {
 	fi
 }
 
+function check_rvm() {
+	if [ -d ~/.rvm ]
+	then
+		warn "Warning: rvm folder found ~/.rvm"
+		warn "         rvm might be conflicting with rbenv"
+		warn "         the Le Wagon setup recommends rbenv over rvm"
+		warn "         if you know what you are doing"
+		warn "         this is fine"
+		return
+	fi
+	if [ -x "$(command -v rvm)" ]
+	then
+		warn "Warning: rvm executable found"
+		warn "         rvm might be conflicting with rbenv"
+		warn "         the Le Wagon setup recommends rbenv over rvm"
+		warn "         if you know what you are doing"
+		warn "         this is fine"
+		return
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1774,6 +1813,7 @@ function main() {
 	if is_web
 	then
 		check_ruby
+		check_rvm
 		check_database
 		check_ready_commit_email
 	elif is_data
