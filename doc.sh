@@ -1563,11 +1563,31 @@ function check_zshrc_contents() {
 	check_zshrc_plugins
 }
 
+function check_pyenv_in_zprofile() {
+	# no need to alert web students about this
+	is_data || return
+
+	# https://github.com/lewagon/dotfiles/blob/master/zprofile
+	# keep up to date with this
+	#
+	# matching this line
+	# type -a pyenv > /dev/null && eval "$(pyenv init --path)"
+	#
+	# supports custom indent
+	if grep -q '^[[:space:]]*type -a pyenv' ~/.zprofile
+	then
+		return
+	fi
+	warn "Warning: missing pyenv init in ~/.zprofile"
+
+}
+
 function check_zprofile_contents() {
 	[[ -f ~/.zprofile ]] || return
 
 	assert_num_file_lines ~/.zprofile 3 15
 	assert_num_dupe_lines ~/.zprofile 5
+	check_pyenv_in_zprofile
 }
 
 function check_node_version() {
