@@ -1790,6 +1790,18 @@ function check_mac_ports() {
 	warn "         this can conflict with homebrew"
 }
 
+function check_asdf_python() {
+	if [ ! -d ~/.asdf/plugins/python/ ]
+	then
+		return
+	fi
+	warn "Warning: ${_color_YELLOW}asdf$_color_yellow python plugin found"
+	warn "         asdf is a competitor of pyenv"
+	warn "         Le Wagon recommends pyenv"
+	warn "         if your python is working"
+	warn "         and you know what you are doing this is fine."
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1829,11 +1841,13 @@ function main() {
 	then
 		check_ruby
 		check_rvm
+		check_asdf_ruby
 		check_database
 		check_ready_commit_email
 	elif is_data
 	then
 		check_docker
+		check_asdf_python
 	fi
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
 	then
