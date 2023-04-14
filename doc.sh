@@ -1889,7 +1889,10 @@ function main() {
 		# assume you are authed
 		# to the correct github account
 		# using the gh cli
-		check_github_org_invite_accept
+		if is_web
+		then
+			check_github_org_invite_accept
+		fi
 		check_git_and_github_email_match
 	fi
 	check_zshrc_contents
