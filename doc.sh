@@ -32,6 +32,8 @@ bootcamp=unkown
 num_warnings=0
 num_errors=0
 
+MIN_DISK_SPACE_GB=10
+
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
 if [ -f /usr/bin/uname ]
@@ -1054,7 +1056,7 @@ function check_dotfiles() {
 	return 1
 }
 
-function check_docker() {
+function check_docker_installed() {
 	if [ -x "$(command -v docker)" ]
 	then
 		return
@@ -1068,6 +1070,16 @@ function check_docker() {
 		warn "         make sure to install it on your ${_color_GREEN}Linux$_color_yellow subsystem"
 		warn "         not on your ${_color_RED}Windows$_color_yellow host system"
 	fi
+}
+
+function check_docker_running() {
+	# TODO: service docker start
+	test
+}
+
+function check_docker() {
+	check_docker_installed
+	check_docker_running
 }
 
 function check_github_access() {
@@ -1699,10 +1711,37 @@ function check_windows_anti_virus() {
 	check_if_custom_anti_virus_is_running
 }
 
+function check_disk_space() {
+	# only check the / partition
+
+	local avail
+	if ! avail="$(df -h 2>/dev/null | grep ' /$' | awk '{ print $4 }')"
+	then
+		warn "Warning: failed to get free disk space"
+		return
+	fi
+	if [[ "$avail" =~ ^[0-9]+M$ ]] || [[ "$avail" =~ ^[0-9]+K$ ]]
+	then
+		warn "Warning: detected too little free disk space $avail"
+	elif [[ "$avail" =~ ^([0-9]+)G$ ]]
+	then
+		local avail_gb
+		avail_gb="${BASH_REMATCH[1]}"
+		if [ "$avail_gb" -lt "$MIN_DISK_SPACE_GB" ]
+		then
+			warn "Warning: you only seem to have $avail_gb GB free disk space"
+			warn "         it is recommended to have more than $MIN_DISK_SPACE_GB GB"
+		fi
+	else
+		warn "Warning: failed to detect available disk space"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
 	check_basics
+	check_disk_space
 	if is_mac
 	then
 		check_brew
