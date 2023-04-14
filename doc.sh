@@ -1657,8 +1657,39 @@ function check_zscaler_ssl() {
 	fi
 }
 
+function check_if_custom_anti_virus_is_running() {
+	local anti_viruses=''
+	if ! anti_viruses="$(
+		powershell.exe \
+			"Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct" \
+			| grep displayName
+	)"
+	then
+		warn "Warning: failed to list anti viruses"
+		return
+	fi
+	# allow windows defender
+	# this is the output on a system with windows defender running
+	# displayName              : Windows Defender
+	anti_viruses="$(echo "$anti_viruses" | grep -v "Windows Defender" | awk NF)"
+
+	if [ "$anti_viruses" == "" ]
+	then
+		return
+	fi
+
+	# indent to look nice in the warning message
+	anti_viruses="$(echo "$anti_viruses" | awk '{ print "         " $0 }')"
+	warn "Warning: you have the following anti virus tools running"
+	warn "         if you have issues with the setup"
+	warn "         try stopping and or uninstalling those"
+	warn ""
+	warn "$anti_viruses"
+}
+
 function check_windows_anti_virus() {
 	check_zscaler_ssl
+	check_if_custom_anti_virus_is_running
 }
 
 function main() {
