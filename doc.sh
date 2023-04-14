@@ -1043,7 +1043,7 @@ function check_dotfiles() {
 	fi
 	# TODO: add comment explaining this line
 	#       i do not understand it :D
-	if [ ! -f ~/.zshrc ]
+	if [ ! -f ~/.zshrc ] || [ ! -f ~/.zprofile ]
 	then
 		found_dotfiles=0
 	fi
