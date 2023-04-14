@@ -33,6 +33,7 @@ num_warnings=0
 num_errors=0
 
 MIN_DISK_SPACE_GB=10
+WANTED_RAILS_MAJOR_VERSION=7
 
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
@@ -1790,6 +1791,18 @@ function check_mac_ports() {
 	warn "         this can conflict with homebrew"
 }
 
+function check_asdf_ruby() {
+	if [ ! -d ~/.asdf/plugins/ruby/ ]
+	then
+		return
+	fi
+	warn "Warning: ${_color_YELLOW}asdf$_color_yellow ruby plugin found"
+	warn "         asdf is a competitor of rbenv"
+	warn "         Le Wagon recommends rbenv"
+	warn "         if your ruby is working"
+	warn "         and you know what you are doing this is fine."
+}
+
 function check_asdf_python() {
 	if [ ! -d ~/.asdf/plugins/python/ ]
 	then
@@ -1800,6 +1813,35 @@ function check_asdf_python() {
 	warn "         Le Wagon recommends pyenv"
 	warn "         if your python is working"
 	warn "         and you know what you are doing this is fine."
+}
+
+function check_rails_version() {
+	if [ ! -x "$(command -v rails)" ]
+	then
+		return
+	fi
+	if ! [[ "$(rails -v)" =~ Rails\ ([0-9])\..* ]]
+	then
+		warn "Warning: failed to parse rails version"
+		warn ""
+		warn "         $_color_YELLOW$(rails -v)"
+		warn ""
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+	local major_rails_version
+	major_rails_version="${BASH_REMATCH[1]}"
+	if [ "$major_rails_version" -ge "$WANTED_RAILS_MAJOR_VERSION" ]
+	then
+		return
+	fi
+	warn "Warning: your rails version $_color_RED$major_rails_version$_color_yellow is outdated"
+	warn "         the expected version is $_color_GREEN$WANTED_RAILS_MAJOR_VERSION"
+	warn "         To fix it try running these commands or the doctor with $_color_WHITE--fix"
+	warn ""
+	warn "         ${_color_WHITE}rbenv install $(wanted_ruby_version)"
+	warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
 }
 
 function main() {
@@ -1842,6 +1884,7 @@ function main() {
 		check_ruby
 		check_rvm
 		check_asdf_ruby
+		check_rails_version
 		check_database
 		check_ready_commit_email
 	elif is_data
