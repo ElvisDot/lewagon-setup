@@ -1836,12 +1836,27 @@ function check_rails_version() {
 	then
 		return
 	fi
+	if [ "$arg_fix" == "1" ]
+	then
+		if ! which gem | grep -qF rbenv/shims
+		then
+			warn "Warning: failed to install rails"
+			warn "         because the gem command is not"
+			warn "         installed via rbenv"
+			return
+		fi
+		gem install rails
+		return
+	fi
 	warn "Warning: your rails version $_color_RED$major_rails_version$_color_yellow is outdated"
 	warn "         the expected version is $_color_GREEN$WANTED_RAILS_MAJOR_VERSION"
-	warn "         To fix it try running these commands or the doctor with $_color_WHITE--fix"
 	warn ""
-	warn "         ${_color_WHITE}rbenv install $(wanted_ruby_version)"
-	warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
+	warn "         reinstalling the gem should fix it:"
+	warn ""
+	warn "         ${_color_WHITE}gem install rails"
+	warn ""
+	warn "         or run the doctor with $_color_WHITE--fix"
+	warn ""
 }
 
 function main() {
