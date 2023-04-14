@@ -1776,6 +1776,20 @@ function check_rvm() {
 	fi
 }
 
+function check_mac_ports() {
+	if [ ! -x "$(command -v port)" ]
+	then
+		return
+	fi
+	if ! port help 2>&1 | grep -qi MacPorts
+	then
+		return
+	fi
+	warn "Warning: port command found"
+	warn "         do you have mac ports installed?"
+	warn "         this can conflict with homebrew"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1784,6 +1798,7 @@ function main() {
 	if is_mac
 	then
 		check_brew
+		check_mac_ports
 		check_sip_mac
 	elif is_windows
 	then
