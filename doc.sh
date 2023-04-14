@@ -1589,6 +1589,78 @@ function persist_brew_in_path() {
 	fi
 }
 
+function check_zscaler_ssl() {
+	if [ ! -x "$(command -v openssl)" ]
+	then
+		warn "Warning: could not check zscaler because openssl is not installed"
+		return
+	fi
+	if [ ! -x "$(command -v timeout)" ]
+	then
+		warn "Warning: could not check zscaler because timeout is not installed"
+		warn "         to fix this please install core utils"
+		return
+	fi
+	# https://www.zscaler.com/
+	# I do not know what they do and also do not want to
+	# but they kicked digicert out of the ca chain
+	# which breaks all tls encrypted connections to
+	# github.com on wsl
+	#
+	# this is how the output on a broken system looks like
+	# $ openssl s_client -connect github.com:443
+	# CONNECTED(00000005)
+	# depth=2 C = US, ST = California, O = Zscaler Inc., OU = Zscaler Inc., CN = Zscaler Intermediate Root CA (zscalertwo.net), emailAddress = support@zscaler.com
+	# verify error:num=20:unable to get local issuer certificate
+	# ---
+	# Certificate chain
+	# 0 s:C = US, ST = California, L = San Francisco, O = "GitHub, Inc.", CN = github.com
+	# i:C = US, ST = California, O = Zscaler Inc., OU = Zscaler Inc., CN = "Zscaler Intermediate Root CA (zscalertwo.net) (t) "
+	# 1 s:C = US, ST = California, O = Zscaler Inc., OU = Zscaler Inc., CN = "Zscaler Intermediate Root CA (zscalertwo.net) (t) "
+	# i:C = US, ST = California, O = Zscaler Inc., OU = Zscaler Inc., CN = Zscaler Intermediate Root CA (zscalertwo.net), emailAddress = support@zscaler.com
+	# 2 s:C = US, ST = California, O = Zscaler Inc., OU = Zscaler Inc., CN = Zscaler Intermediate Root CA (zscalertwo.net), emailAddress = support@zscaler.com
+	# i:C = US, ST = California, L = San Jose, O = Zscaler Inc., OU = Zscaler Inc., CN = Zscaler Root CA, emailAddress = support@zscaler.com
+	# ---
+	#
+	#
+	# this is how it should look like on a healthy system:
+	#
+	# CONNECTED(00000003)
+	# depth=2 C = US, O = DigiCert Inc, OU = www.digicert.com, CN = DigiCert Global Root CA
+	# verify return:1
+	# depth=1 C = US, O = DigiCert Inc, CN = DigiCert TLS Hybrid ECC SHA384 2020 CA1
+	# verify return:1
+	# depth=0 C = US, ST = California, L = San Francisco, O = "GitHub, Inc.", CN = github.com
+	# verify return:1
+	# ---
+	# Certificate chain
+	# 0 s:C = US, ST = California, L = San Francisco, O = "GitHub, Inc.", CN = github.com
+	# i:C = US, O = DigiCert Inc, CN = DigiCert TLS Hybrid ECC SHA384 2020 CA1
+	# 1 s:C = US, O = DigiCert Inc, CN = DigiCert TLS Hybrid ECC SHA384 2020 CA1
+	# i:C = US, O = DigiCert Inc, OU = www.digicert.com, CN = DigiCert Global Root CA
+	# ---
+
+	# the timeout is very much needed
+	# because this operation is super slow at all times
+	# lets rather miss out on this warning on a very slow machine
+	# than slow down the doctor by 15s for every windows machine
+	if timeout 1 openssl s_client -connect github.com:443 2>&1 | grep -q Zscaler
+	then
+		warn "Warning: Zscaler seems to be messing with your connection"
+		warn "         if connecting to github.com works fine ignore this error"
+		warn "         and report it as false positive here please"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		warn ""
+		warn "         if gh auth or other github operations fail"
+		warn "         please turn off Zscaler on your windows machine"
+		warn ""
+	fi
+}
+
+function check_windows_anti_virus() {
+	check_zscaler_ssl
+}
+
 function main() {
 	check_colors
 	device_info
@@ -1597,6 +1669,9 @@ function main() {
 	then
 		check_brew
 		check_sip_mac
+	elif is_windows
+	then
+		check_windows_anti_virus
 	fi
 	detect_bootcamp
 	check_vscode
@@ -1637,4 +1712,3 @@ function main() {
 }
 
 main
-
