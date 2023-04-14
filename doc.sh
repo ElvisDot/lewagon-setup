@@ -32,18 +32,25 @@ bootcamp=unkown
 num_warnings=0
 num_errors=0
 
-# straight copy from the homebrew install script
-# https://github.com/Homebrew/install/blob/95648ef45c8d59a44fa4ab8f29cdcf17d6ec48ac/install.sh#L127-L138
-UNAME_MACHINE="$(/usr/bin/uname -m)"
-if [[ "${UNAME_MACHINE}" == "arm64" ]]
+UNAME_MACHINE="unkown"
+HOMEBREW_PREFIX="/usr/local"
+if [ -f /usr/bin/uname ]
 then
-	# On ARM macOS, this script installs to /opt/homebrew only
-	HOMEBREW_PREFIX="/opt/homebrew"
-	# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
+	UNAME_MACHINE="unkown"
 else
-	# On Intel macOS, this script installs to /usr/local only
-	HOMEBREW_PREFIX="/usr/local"
-	# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
+	# straight copy from the homebrew install script
+	# https://github.com/Homebrew/install/blob/95648ef45c8d59a44fa4ab8f29cdcf17d6ec48ac/install.sh#L127-L138
+	UNAME_MACHINE="$(/usr/bin/uname -m)"
+	if [[ "${UNAME_MACHINE}" == "arm64" ]]
+	then
+		# On ARM macOS, this script installs to /opt/homebrew only
+		HOMEBREW_PREFIX="/opt/homebrew"
+		# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
+	else
+		# On Intel macOS, this script installs to /usr/local only
+		HOMEBREW_PREFIX="/usr/local"
+		# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
+	fi
 fi
 
 # Auto say yes on new ssh connections when being prompted this
