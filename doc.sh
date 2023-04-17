@@ -1981,6 +1981,79 @@ function check_rails_version() {
 	warn ""
 }
 
+function check_git_init_in_fullstack_challenges() {
+	# if a student types `git init`
+	# in the challenges folder
+	# can happen on setup day while testing git
+	# it overwrites the outer git folder
+	# and breaks commands such as `git pull`
+	# and `git push` because the remotes are gone
+	local git_repos
+	local code_dir_username
+	code_dir_username="$(basename "$(get_code_user_dir)")"
+	local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
+	[[ -d "$challenges_dir" ]] || return
+	cd "$challenges_dir" || return
+
+	if ! git_repos="$(find . -type d -name .git)"
+	then
+		warn "Warning: failed to check git repos in fullstack-challenges"
+		warn "         this is a issue with the doctor. Please report it here:"
+		warn ""
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+	if [ "$git_repos" == "./.git" ]
+	then
+		# all good
+		return
+	fi
+
+	if [ ! -d ./.git ]
+	then
+		warn "Warning: missing git folder in fullstack-challenges folder"
+		warn "         $(pwd)"
+	fi
+
+	if [ "$git_repos" != "" ]
+	then
+		warn "Warning: unexpected git repositories found in"
+		warn "         your fullstack-challenges folder"
+		warn ""
+		warn "         your challenges dir:"
+		warn "           $_color_GREEN$(pwd)"
+		warn ""
+		warn "         unexpected git folders:"
+		local git_repo
+		while IFS= read -r -d '' git_repo
+		do
+			[[ "$git_repo" == './.git' ]] && continue
+
+			warn "           $_color_RED$git_repo$_color_RESET"
+		done < <(find . -type d -name .git -print0)
+		warn ""
+		warn "         This breaks ${_color_WHITE}git push$_color_yellow and other"
+		warn "         git commands in these folders. The fix is to"
+		warn "         delete these git repos like so:"
+		warn ""
+		while IFS= read -r -d '' git_repo
+		do
+			[[ "$git_repo" == './.git' ]] && continue
+
+			local full_path_git_repo
+			# readlink -f can fail
+			# then fallback to a cd suggestion instead
+			if ! full_path_git_repo="$(readlink -f "$git_repo")"
+			then
+				warn "           ${_color_WHITE}cd $(pwd) && rm -rf $full_path_git_repo$_color_RESET"
+				continue
+			fi
+			warn "           ${_color_WHITE}rm -rf $full_path_git_repo$_color_RESET"
+		done < <(find . -type d -name .git -print0)
+		warn ""
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2027,6 +2100,7 @@ function main() {
 		check_rails_version
 		check_database
 		check_ready_commit_email
+		check_git_init_in_fullstack_challenges
 	elif is_data
 	then
 		check_docker
