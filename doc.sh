@@ -195,7 +195,7 @@ function error() {
 	then
 		num_errors="$((num_errors + 1))"
 	fi
-	printf '%b[%b-%b]%b %s%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$msg" "$_color_RESET"
+	printf '%b[%b-%b]%b %b%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$msg" "$_color_RESET"
 }
 
 function warn() {
@@ -212,7 +212,7 @@ function log() {
 }
 
 function okay() {
-	printf '%b[%b+%b]%b %s\n' "$_color_WHITE" "$_color_GREEN" "$_color_WHITE" "$_color_RESET" "$1"
+	printf '%b[%b+%b]%b %b\n' "$_color_WHITE" "$_color_GREEN" "$_color_WHITE" "$_color_RESET" "$1"
 }
 
 function check_ssl() {
