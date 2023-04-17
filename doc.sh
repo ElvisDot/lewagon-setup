@@ -511,7 +511,7 @@ function device_info() {
 		#   docker-desktop-data    Stopped         2
 		#   docker-desktop         Stopped         2
 		local wsl_lv
-		wsl_lv="$(wsl.exe -l -v)"
+		wsl_lv="$(wsl.exe -l -v | iconv -f utf16)"
 		wsl_default_version="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | awk '{ print $4 }' | tail -n1)"
 		wsl_version="$(echo "$wsl_lv" | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]" | awk '{ print $4 }' | tail -n1)"
 		is_running_default="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]")"
