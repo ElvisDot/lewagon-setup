@@ -230,7 +230,7 @@ function check_ssl() {
 	warn "Warning: Could not establish SSL connection!"
 }
 
-function check_internet() {
+function fail_if_no_internet() {
 	local ip
 	# Even the stable LeWagon munich office had a hiccup for 8.8.8.8
 	# So give it some attempts
@@ -555,10 +555,53 @@ function check_shell() {
 	fi
 }
 
+function fix_dns_wsl() {
+	if [ "$arg_fix" == "1" ]
+	then
+		if [ -f /etc/resolv.conf ]
+		then
+			if ! mkdir -p /tmp/lewagon-doc
+			then
+				err "Error: failed to create backup folder /tmp/lewagon-doc"
+				exit 1
+			fi
+			local backup_conf
+			if ! backup_conf="$(mktemp /tmp/lewagon-doc/XXXXXX_resolv.conf.backup)"
+			then
+				err "Error: failed to create temp backup file"
+				exit 1
+			fi
+			cat /etc/resolv.conf > "$backup_conf"
+			sudo rm /etc/resolv.conf
+			log "Updating $_color_WHITE/etc/resolv.conf$_color_RESET to fix dns."
+			log "The old resolv.conf is backed up at $_color_green$backup_conf$_color_RESET"
+		fi
+		sudo bash -c 'echo "nameserver 8.8.8.8" > /etc/resolv.conf'
+		sudo bash -c 'echo "[network]" > /etc/wsl.conf'
+		sudo bash -c 'echo "generateResolvConf = false" >> /etc/wsl.conf'
+		sudo chattr +i /etc/resolv.conf
+		return
+	fi
+	err "Error: your dns is not working. Try running these commands"
+	err ""
+	err "      ${_color_WHITE}sudo rm /etc/resolv.conf"
+	err "      ${_color_WHITE}sudo bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'"
+	err "      ${_color_WHITE}sudo bash -c 'echo \"[network]\" > /etc/wsl.conf'"
+	err "      ${_color_WHITE}sudo bash -c 'echo \"generateResolvConf = false\" >> /etc/wsl.conf'"
+	err "      ${_color_WHITE}sudo chattr +i /etc/resolv.conf"
+	err ""
+	err "      or run the doctor with $_color_WHITE--fix"
+}
+
 function check_basics() {
 	if ! check_dns
 	then
-		check_internet
+		fail_if_no_internet
+
+		if is_windows
+		then
+			fix_dns_wsl
+		fi
 	fi
 	if [ "$arg_full" == "1" ]
 	then
@@ -570,7 +613,6 @@ function check_basics() {
 		check_user_windows
 	fi
 }
-
 
 function check_vscode() {
 	if [ -x "$(command -v code)" ]
