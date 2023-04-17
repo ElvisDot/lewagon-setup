@@ -518,7 +518,7 @@ function device_info() {
 		wsl_lv="$(wsl.exe -l -v | iconv -f utf16 | tr -d '\r')"
 		wsl_default_version="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | awk '{ print $4 }' | tail -n1)"
 		is_running_default="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]")"
-		if [ "$is_running_default" == "" ]
+		if [ "$is_running_default" != "" ]
 		then
 			wsl_version="$(echo "$wsl_lv" | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]" | awk '{ print $4 }' | tail -n1)"
 		else
