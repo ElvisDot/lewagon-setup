@@ -1160,8 +1160,14 @@ function check_dotfiles() {
 	fi
 	# TODO: add comment explaining this line
 	#       i do not understand it :D
-	if [ ! -f ~/.zshrc ] || [ ! -f ~/.zprofile ]
+	if [ ! -f ~/.zshrc ]
 	then
+		found_dotfiles=0
+	fi
+	if [ ! -f ~/.zprofile ] && is_data
+	then
+		# pyenv stuff is only crucial for data students
+		error "Error: missing zprofile in dotfiles"
 		found_dotfiles=0
 	fi
 	if [ "$found_dotfiles" == "1" ] && grep -q "rbenv init" ~/.zshrc
