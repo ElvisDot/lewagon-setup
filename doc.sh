@@ -511,10 +511,17 @@ function device_info() {
 		#   docker-desktop-data    Stopped         2
 		#   docker-desktop         Stopped         2
 		local wsl_lv
-		wsl_lv="$(wsl.exe -l -v | iconv -f utf16)"
+		wsl_lv="$(wsl.exe -l -v | iconv -f utf16 | tr -d '\r')"
 		wsl_default_version="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | awk '{ print $4 }' | tail -n1)"
-		wsl_version="$(echo "$wsl_lv" | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]" | awk '{ print $4 }' | tail -n1)"
 		is_running_default="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]")"
+		if [ "$is_running_default" == "" ]
+		then
+			wsl_version="$(echo "$wsl_lv" | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]" | awk '{ print $4 }' | tail -n1)"
+		else
+			# the leading * makes the version the 4th column in awk
+			# if its not the default its the 3rd column
+			wsl_version="$(echo "$wsl_lv" | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]" | awk '{ print $3 }' | tail -n1)"
+		fi
 		wsl_note="$_color_yellow WSL $wsl_version$_color_RESET"
 	fi
 	log "Detected $_color_green$detected_os$_color_RESET $detected_distro$arm_note$wsl_note"
