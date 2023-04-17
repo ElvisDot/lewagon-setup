@@ -544,16 +544,16 @@ function device_info() {
 		# less than 2 or unequal 2
 		# because a new fancy better wsl might release that
 		# does not have a numeric version
-		if [ "$wsl_version" == "$WANTED_WSL_VERSION" ]
+		if [ "$wsl_version" != "$WANTED_WSL_VERSION" ]
 		then
-			error "Error: you are running ${_color_RED}WSL 1$_color_red"
-			error "       please get ${_color_GREEN}WSL 2$_color_red instead."
+			error "Error: you are running ${_color_RED}WSL $wsl_version$_color_red"
+			error "       please get ${_color_GREEN}WSL $WANTED_WSL_VERSION$_color_red instead."
 			error ""
 			error "       https://github.com/lewagon/setup/blob/master/windows.md#upgrade-to-wsl-2"
 			error ""
-		elif [ "$wsl_default_version" == "1" ]
+		elif [ "$wsl_default_version" != "$WANTED_WSL_VERSION" ]
 		then
-			error "Error: your default WSL version is 1 instead of 2"
+			error "Error: your default WSL version is $_color_RED$_color_red instead of $_color_YELLOW$WANTED_WSL_VERSION"
 		fi
 		if [ "$is_running_default" == "" ]
 		then
