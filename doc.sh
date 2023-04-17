@@ -34,6 +34,7 @@ num_errors=0
 
 MIN_DISK_SPACE_GB=10
 WANTED_RAILS_MAJOR_VERSION=7
+WANTED_WSL_VERSION=2
 
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
@@ -498,7 +499,25 @@ function device_info() {
 		error "Something went wrong"
 		exit 1
 	fi
-	log "Detected $_color_green$detected_os$_color_RESET $detected_distro $(is_arm && echo -e "$_color_green(arm)$_color_RESET")"
+	local arm_note=''
+	arm_note="$(is_arm && echo -e " $_color_green(arm)$_color_RESET")"
+	local wsl_version=''
+	local wsl_note=''
+	if is_windows && [ -x "$(command -v wsl.exe)" ]
+	then
+		# wsl.exe -l -v output looks like this
+		#   NAME                   STATE           VERSION
+		# * Ubuntu                 Running         2
+		#   docker-desktop-data    Stopped         2
+		#   docker-desktop         Stopped         2
+		local wsl_lv
+		wsl_lv="$(wsl.exe -l -v)"
+		wsl_default_version="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | awk '{ print $4 }' | tail -n1)"
+		wsl_version="$(echo "$wsl_lv" | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]" | awk '{ print $4 }' | tail -n1)"
+		is_running_default="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | grep "[[:space:]]${WSL_DISTRO_NAME}[[:space:]]")"
+		wsl_note="$_color_yellow WSL $wsl_version$_color_RESET"
+	fi
+	log "Detected $_color_green$detected_os$_color_RESET $detected_distro$arm_note$wsl_note"
 	if ! is_mac && ! is_ubuntu
 	then
 		warn "Warning: Le Wagon setup recommends Ubuntu"
@@ -520,6 +539,25 @@ function device_info() {
 		if [ "$winver" -lt "10" ]
 		then
 			warn "Warning: your windows is outdated please do a update"
+		fi
+		# intentionally check for 1 instead of
+		# less than 2 or unequal 2
+		# because a new fancy better wsl might release that
+		# does not have a numeric version
+		if [ "$wsl_version" == "$WANTED_WSL_VERSION" ]
+		then
+			error "Error: you are running ${_color_RED}WSL 1$_color_red"
+			error "       please get ${_color_GREEN}WSL 2$_color_red instead."
+			error ""
+			error "       https://github.com/lewagon/setup/blob/master/windows.md#upgrade-to-wsl-2"
+			error ""
+		elif [ "$wsl_default_version" == "1" ]
+		then
+			error "Error: your default WSL version is 1 instead of 2"
+		fi
+		if [ "$is_running_default" == "" ]
+		then
+			warn "Warning: your current WSL is not set as default"
 		fi
 	fi
 }
@@ -562,13 +600,13 @@ function fix_dns_wsl() {
 		then
 			if ! mkdir -p /tmp/lewagon-doc
 			then
-				err "Error: failed to create backup folder /tmp/lewagon-doc"
+				error "Error: failed to create backup folder /tmp/lewagon-doc"
 				exit 1
 			fi
 			local backup_conf
 			if ! backup_conf="$(mktemp /tmp/lewagon-doc/XXXXXX_resolv.conf.backup)"
 			then
-				err "Error: failed to create temp backup file"
+				error "Error: failed to create temp backup file"
 				exit 1
 			fi
 			cat /etc/resolv.conf > "$backup_conf"
@@ -582,15 +620,15 @@ function fix_dns_wsl() {
 		sudo chattr +i /etc/resolv.conf
 		return
 	fi
-	err "Error: your dns is not working. Try running these commands"
-	err ""
-	err "      ${_color_WHITE}sudo rm /etc/resolv.conf"
-	err "      ${_color_WHITE}sudo bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'"
-	err "      ${_color_WHITE}sudo bash -c 'echo \"[network]\" > /etc/wsl.conf'"
-	err "      ${_color_WHITE}sudo bash -c 'echo \"generateResolvConf = false\" >> /etc/wsl.conf'"
-	err "      ${_color_WHITE}sudo chattr +i /etc/resolv.conf"
-	err ""
-	err "      or run the doctor with $_color_WHITE--fix"
+	error "Error: your dns is not working. Try running these commands"
+	error ""
+	error "      ${_color_WHITE}sudo rm /etc/resolv.conf"
+	error "      ${_color_WHITE}sudo bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'"
+	error "      ${_color_WHITE}sudo bash -c 'echo \"[network]\" > /etc/wsl.conf'"
+	error "      ${_color_WHITE}sudo bash -c 'echo \"generateResolvConf = false\" >> /etc/wsl.conf'"
+	error "      ${_color_WHITE}sudo chattr +i /etc/resolv.conf"
+	error ""
+	error "      or run the doctor with $_color_WHITE--fix"
 }
 
 function check_basics() {
@@ -1045,7 +1083,12 @@ function run_dotfiles_install() {
 		error "Error: you are missing the dotfiles folder"
 		error "       follow those steps again"
 		error ""
-		error "       https://github.com/lewagon/setup/blob/master/macos.md#dotfiles-standard-configuration"
+		if is_mac
+		then
+			error "       https://github.com/lewagon/setup/blob/master/macos.md#dotfiles-standard-configuration"
+		else
+			error "       https://github.com/lewagon/setup/blob/master/windows.md#dotfiles-standard-configuration"
+		fi
 		error ""
 		exit 1
 	fi
