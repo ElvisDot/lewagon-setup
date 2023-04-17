@@ -510,6 +510,10 @@ function device_info() {
 		# * Ubuntu                 Running         2
 		#   docker-desktop-data    Stopped         2
 		#   docker-desktop         Stopped         2
+		#
+		# But the output is not very clean thats why it needs
+		# the iconv step
+		# see https://askubuntu.com/a/1394244
 		local wsl_lv
 		wsl_lv="$(wsl.exe -l -v | iconv -f utf16 | tr -d '\r')"
 		wsl_default_version="$(echo "$wsl_lv" | grep '[[:space:]]*\*' | awk '{ print $4 }' | tail -n1)"
