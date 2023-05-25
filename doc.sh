@@ -1259,17 +1259,10 @@ function check_github_access() {
 		do
 			if [ ! -f "$ident" ]
 			then
-				# this is not very nice
-				# but on my system it did not expand the tilde
-				# other edge cases are not covered
-				# but this should be working most of the time
-				if [ ! -f "${ident/#~\//$HOME\/}" ]
-				then
-					# todo: auto fix this
-					error "Error: your ~/.ssh/config points to a invalid identity file"
-					error "       $ident"
-					exit 1
-				fi
+				# todo: auto fix this
+				error "Error: your ~/.ssh/config points to a invalid identity file"
+				error "       $ident"
+				exit 1
 			fi
 		done < <(grep '^[[:space:]]*IdentityFile' ~/.ssh/config | awk '{ print $2 }')
 	fi
