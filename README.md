@@ -1,5 +1,5 @@
 # lewagon-setup
-Toy project helper scripts for the LeWagon setup
+The unoffical LeWagon setup doctor. A script that shows and fixes setup issues.
 
 
 ## Web

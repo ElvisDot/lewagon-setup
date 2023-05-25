@@ -578,6 +578,16 @@ function device_info() {
 			warn "Warning: your current WSL is not set as default"
 		fi
 	fi
+
+	# bash version
+	local bash_version="$BASH_VERSION"
+	if [ "${BASH_VERSINFO:-0}" -gt 3 ]
+	then
+		bash_version="$_color_green$bash_version"
+	else
+		bash_version="$_color_red$bash_version"
+	fi
+	log "Running ${_color_WHITE}bash$_color_RESET version $bash_version"
 }
 
 function check_shell() {
@@ -1375,6 +1385,10 @@ function check_package_manager_programs() {
 	fi
 }
 
+function brew_list_postgres() {
+	brew list | grep postgres
+}
+
 function check_database() {
 	# TODO: check that the user was created and its enabled
 	# TODO: persist postgres start command on wsl in zshrc
@@ -1384,7 +1398,7 @@ function check_database() {
 		then
 			brew install sqlite
 		fi
-		if ! brew ls --versions "postgresql@$WANTED_POSTGRES_VERSION"
+		if ! brew ls --versions "postgresql@$WANTED_POSTGRES_VERSION" > /dev/null
 		then
 			if [ "$arg_fix" == "1" ]
 			then
@@ -1406,11 +1420,77 @@ function check_database() {
 			fi
 		fi
 		local postgres_versions
-		postgres_versions="$(brew list | grep postgres)"
+		postgres_versions="$(brew_list_postgres)"
 		if [ "$(echo "$postgres_versions" | wc -l)" -gt 1 ]
 		then
 			warn "Warning: multiple postgres versions found"
-			echo "$postgres_versions"
+			brew_list_postgres
+		fi
+		local postgres_status
+		if ! postgres_status="$(brew services | grep postgres)"
+		then
+			warn "Warning: failed to get postgres status"
+			return
+		fi
+		if [ "$postgres_status" == "" ]
+		then
+			warn "Warning: no postgres service installed"
+			warn "         is postgres installed with brew?"
+			warn ""
+			warn "         this is probably a bug of the doctor it self"
+			warn "         please report this issue here"
+			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+			return
+		fi
+		if ! echo "$postgres_status" | awk '{ print $2 }' | grep -q started
+		then
+			warn "Warning: postgres is not running"
+			warn ""
+			warn "         $_color_WHITE$postgres_status"
+			warn ""
+			# check if a non brew postgres is blocking the port
+			local blocked_port
+			if ! blocked_port="$(lsof -i -P | grep ":5432 (LISTEN)")"
+			then
+				warn "Warning: failed to check for blocked port"
+				return
+			fi
+			if [ "$blocked_port" == "" ]
+			then
+				return
+			fi
+			local blocking_pid
+			if ! blocking_pid="$(echo "$blocked_port" | awk '{ print $2 }' | tail -n1)"
+			then
+				warn "Warning: failed to get blocking pid"
+				return
+			fi
+			if ! [[ "$blocking_pid" =~ ^[0-9]+$ ]]
+			then
+				warn "Warning: got invalid pid '$blocking_pid'"
+				warn ""
+				warn "         this is a bug of the doctor it self"
+				warn "         please report this issue here"
+				warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+				return
+			fi
+			local blocking_proc_full
+			if ! blocking_proc_full="$(ps ux -p "$blocking_pid" | tail -n1)"
+			then
+				warn "Warning: failed to get the process that blocks the postgres port"
+				warn ""
+				warn "         this is a bug of the doctor it self"
+				warn "         please report this issue here"
+				warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+				return
+			fi
+			warn "Warning: the postgres port is blocked by another process"
+			warn "         do you have another postgres installed?"
+			warn "         maybe a postgres docker container running?"
+			warn "         try uninstalling or deactivating this process:"
+			warn ""
+			warn "         ${_color_red}$blocking_proc_full"
+			warn ""
 		fi
 	else # Windows/Linux
 		if [ ! -x "$(command -v sqlite3)" ]
