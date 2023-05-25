@@ -1298,7 +1298,6 @@ function check_github_access() {
 		then
 			warn "Warning: unexpected ssh key found ${_color_YELLOW}$ssh_pub"
 			warn "         this is fine if you know what you are doing"
-			exit 1
 		fi
 	done
 
