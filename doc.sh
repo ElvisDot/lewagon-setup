@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 _color_RESET="\e[0m"
 # _color_BLACK="\e[1;30m"
@@ -36,6 +36,12 @@ MIN_DISK_SPACE_GB=10
 WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
+
+if [ "${BASH_VERSINFO:-0}" -lt 4 ]
+then
+	echo "Error: your bash version $BASH_VERSION is too old"
+	exit 1
+fi
 
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
