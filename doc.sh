@@ -35,6 +35,7 @@ num_errors=0
 MIN_DISK_SPACE_GB=10
 WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
+WANTED_POSTGRES_VERSION=15
 
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
@@ -1373,8 +1374,8 @@ function check_database() {
 		fi
 		if [ ! -x "$(command -v psql)" ]
 		then
-			brew install postgresql@14
-			brew services start postgresql@14
+			brew install "postgresql@$WANTED_POSTGRES_VERSION"
+			brew services start "postgresql@$WANTED_POSTGRES_VERSION"
 		fi
 	else # Windows/Linux
 		if [ ! -x "$(command -v sqlite3)" ]
