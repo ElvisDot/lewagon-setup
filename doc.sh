@@ -37,7 +37,7 @@ WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
 
-if [ "${BASH_VERSINFO:-0}" -lt 4 ]
+if [ "${BASH_VERSINFO:-0}" -lt 3 ]
 then
 	echo "Error: your bash version $BASH_VERSION is too old"
 	exit 1
