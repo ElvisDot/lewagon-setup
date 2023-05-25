@@ -1857,15 +1857,24 @@ function check_disk_space() {
 	# only check the / partition
 
 	local avail
-	if ! avail="$(df -h 2>/dev/null | grep ' /$' | awk '{ print $4 }')"
+	if is_mac
 	then
-		warn "Warning: failed to get free disk space"
-		return
+		if ! avail="$(df -h /System/Volumes/Data | awk '{ print $4 }' | tail -n1)"
+		then
+			warn "Warning: failed to get free disk space"
+			return
+		fi
+	else
+		if ! avail="$(df -h 2>/dev/null | grep ' /$' | awk '{ print $4 }')"
+		then
+			warn "Warning: failed to get free disk space"
+			return
+		fi
 	fi
 	if [[ "$avail" =~ ^[0-9]+M$ ]] || [[ "$avail" =~ ^[0-9]+K$ ]]
 	then
 		warn "Warning: detected too little free disk space $avail"
-	elif [[ "$avail" =~ ^([0-9]+)G$ ]]
+	elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
 	then
 		local avail_gb
 		avail_gb="${BASH_REMATCH[1]}"
