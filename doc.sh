@@ -1379,10 +1379,33 @@ function check_database() {
 		then
 			brew install sqlite
 		fi
-		if [ ! -x "$(command -v psql)" ]
+		if ! brew ls --versions "postgresql@$WANTED_POSTGRES_VERSION"
 		then
-			brew install "postgresql@$WANTED_POSTGRES_VERSION"
-			brew services start "postgresql@$WANTED_POSTGRES_VERSION"
+			if [ "$arg_fix" == "1" ]
+			then
+				brew install "postgresql@$WANTED_POSTGRES_VERSION" libpq
+				brew link --force libpq
+				brew services start "postgresql@$WANTED_POSTGRES_VERSION"
+				sleep 1 # give it time to start
+			else
+				warn "Warning: did not find postgresql@$WANTED_POSTGRES_VERSION"
+				warn ""
+				warn "         try running these commands to fix it:"
+				warn ""
+				warn "         ${_color_WHITE}brew install postgresql@$WANTED_POSTGRES_VERSION libpq"
+				warn "         ${_color_WHITE}brew link --force libpq"
+				warn "         ${_color_WHITE}brew services start postgresql@$WANTED_POSTGRES_VERSION"
+				warn ""
+				warn "         to fix it automatically"
+				warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
+			fi
+		fi
+		local postgres_versions
+		postgres_versions="$(brew list | grep postgres)"
+		if [ "$(echo "$postgres_versions" | wc -l)" -gt 1 ]
+		then
+			warn "Warning: multiple postgres versions found"
+			echo "$postgres_versions"
 		fi
 	else # Windows/Linux
 		if [ ! -x "$(command -v sqlite3)" ]
