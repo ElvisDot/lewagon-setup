@@ -40,11 +40,34 @@ WANTED_POSTGRES_VERSION=15
 WANTED_NODE_VERSION='v16.15.1'
 WANTED_RUBY_VERSION='3.1.2'
 
+# unix ts generated using date '+%s'
+# update it using ./scripts/update.sh
+LAST_DOC_UPDATE=1688743602
+MAX_DOC_AGE=300
+
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
 then
 	echo "Error: your bash version $BASH_VERSION is too old"
 	exit 1
 fi
+
+# check self deprecation
+# if this script is not being maintained
+# it gets outdated
+function is_doc_deprecated() {
+	local now
+	if ! now="$(date '+%s')"
+	then
+		return 0
+	fi
+	local days
+	days="$(( (now - LAST_DOC_UPDATE) / 86400 ))"
+	if [ "$days" -gt "$MAX_DOC_AGE" ]
+	then
+		return 0
+	fi
+	return 1
+}
 
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
@@ -86,14 +109,17 @@ function wanted_node_version() {
 }
 
 function wanted_ruby_version() {
-	# We could get the latest version from here
-	#
-	# curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep "^REQUIRED_RUBY_VERSION" | cut -d'"' -f2
-	#
-	# but doing http requests is slow
-	# so maybe add this to the CI
-	# or only if some last_updated variable
-	# is more than x days ago
+	if is_doc_deprecated
+	then
+		local ruby_version
+		if ruby_version="$(curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep "^REQUIRED_RUBY_VERSION" | cut -d'"' -f2)"
+		then
+			if [ "$ruby_version" != "" ]
+			then
+				WANTED_RUBY_VERSION="$ruby_version"
+			fi
+		fi
+	fi
 	echo "$WANTED_RUBY_VERSION"
 }
 
@@ -598,6 +624,12 @@ function device_info() {
 		bash_version="$_color_red$bash_version"
 	fi
 	log "Running ${_color_WHITE}bash$_color_RESET version $bash_version"
+	if is_doc_deprecated
+	then
+		warn "Warning: this script has not been updated in a long time"
+		warn "         it might be outdated"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+	fi
 }
 
 function check_shell() {

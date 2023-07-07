@@ -35,6 +35,12 @@ jobs:
       - name: Run the doctor (full/verbose)
         run: GITHUB_CI=1 ./doc.sh --full -vvv
 
+      - name: Check doctor age
+        run: ./scripts/doc_age.sh || { echo "Update LAST_DOC_UPDATE variable or run ./scripts/update.sh"; exit 1; }
+
+      - name: Check wanted versions
+        run: ./scripts/check_wanted_versions.sh
+
       # - name: Run docker tests
       #   run: ./test/test.sh
 
