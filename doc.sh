@@ -33,9 +33,12 @@ num_warnings=0
 num_errors=0
 
 MIN_DISK_SPACE_GB=10
+
 WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
+WANTED_NODE_VERSION='v16.15.1'
+WANTED_RUBY_VERSION='3.1.2'
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
 then
@@ -79,7 +82,7 @@ function show_help() {
 }
 
 function wanted_node_version() {
-	echo 'v16.15.1'
+	echo "$WANTED_NODE_VERSION"
 }
 
 function wanted_ruby_version() {
@@ -91,7 +94,7 @@ function wanted_ruby_version() {
 	# so maybe add this to the CI
 	# or only if some last_updated variable
 	# is more than x days ago
-	echo "3.1.2"
+	echo "$WANTED_RUBY_VERSION"
 }
 
 function parse_args() {
