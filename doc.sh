@@ -1555,6 +1555,18 @@ function check_postgres_running_linux() {
 	fi
 }
 
+function check_postgres_health() {
+	if ! sudo -u postgres psql -d postgres -c '\l' > /dev/null
+	then
+		warn "Warning: failed to list postgres databases"
+		warn "         try running this command and check if there are any errors"
+		warn ""
+		warn "         ${_color_WHITE}sudo -u postgres psql -d postgres -c '\\l' > /dev/null"
+		warn ""
+		return
+	fi
+}
+
 function check_database() {
 	# TODO: check that the user was created and its enabled
 	# TODO: persist postgres start command on wsl in zshrc
@@ -1565,6 +1577,7 @@ function check_database() {
 	else
 		check_postgres_running_linux
 	fi
+	check_postgres_health
 }
 
 function check_sip_mac() {
