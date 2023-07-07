@@ -1615,6 +1615,25 @@ function check_postgres_role() {
 	fi
 }
 
+function check_postgres_create_db() {
+	if psql -U "$(whoami)" -lqt | grep -q lewagon_doc_test_db_delete_me
+	then
+		# TODO: should we warn here?
+		# 	this means either the student created a db with this name
+		# 	or the script failed to delete it
+		# 	either way its a edge case and the system is probably healthy
+		return
+	fi
+	if ! psql -U "$(whoami)" -d postgres -c 'CREATE DATABASE lewagon_doc_test_db_delete_me;' > /dev/null
+	then
+		warn "Warning: failed to create postgres database"
+	fi
+	if ! psql -U "$(whoami)" -d postgres -c 'DROP DATABASE lewagon_doc_test_db_delete_me;' > /dev/null
+	then
+		warn "Warning: failed to delete postgres database"
+	fi
+}
+
 function check_database() {
 	# TODO: persist postgres start command on wsl in zshrc
 	check_postgres_and_sqlite_installed
@@ -1626,6 +1645,7 @@ function check_database() {
 	fi
 	check_postgres_health
 	check_postgres_role
+	check_postgres_create_db
 }
 
 function check_sip_mac() {
