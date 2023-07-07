@@ -207,11 +207,18 @@ function error() {
 
 function warn() {
 	local msg="$1"
+	local nl='\n'
+	if [ "$msg" == "-n" ]
+	then
+		nl=''
+		shift
+		msg="$1"
+	fi
 	if [[ "$msg" =~ Warning: ]]
 	then
 		num_warnings="$((num_warnings + 1))"
 	fi
-	printf '%b[%b!%b]%b %b%b\n' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$msg" "$_color_RESET"
+	printf '%b[%b!%b]%b %b%b%b' "$_color_WHITE" "$_color_YELLOW" "$_color_WHITE" "$_color_yellow" "$msg" "$_color_RESET" "$nl"
 }
 
 function log() {
@@ -1741,6 +1748,44 @@ function assert_num_dupe_lines() {
 	fi
 }
 
+function underline_str() {
+	# usage: underline_str string [offset]
+	# arguments:
+	# 	string - the string to be underlined (only used to count the length)
+	# 	offset - if no offset is given it underlines the whole string
+	# 		 if a offset is given it only underlines at the offset
+	# 		 and one before and after it
+	# example:
+	# 	underline_str hello
+	# 	returns ^^^^^
+	#
+	#	underline_str hello 2
+	#	returns  ^^^
+	local str="$1"
+	local offset="$2"
+	local is_offset=0
+	if [[ "$offset" =~ ^[0-9]+$ ]]
+	then
+		is_offset=1
+	fi
+	local i
+	for ((i=0;i<${#str};i++))
+	do
+		if [ "$is_offset" != "1" ]
+		then
+			printf '^'
+			continue
+		fi
+		if [ "$i" == "$((offset-1))" ] || [ "$i" == "$offset" ] || [ "$i" == "$((offset+1))" ]
+		then
+			printf '^'
+		else
+			printf ' '
+		fi
+	done
+	printf '\n'
+}
+
 function check_zshrc_plugins() {
 	local num_plugin_lists
 	[[ -f ~/.zshrc ]] || return
@@ -1761,6 +1806,23 @@ function check_zshrc_plugins() {
 	local plugin_list
 	plugin_list="$(grep "[[:space:]]*plugins=" ~/.zshrc)"
 	plugin_list_line="$(grep -n "[[:space:]]*plugins=" ~/.zshrc | cut -d ':' -f1)"
+	if [[ "$plugin_list" =~ ^[:space:]*plugins=\([^#]+\)[^#]+ssh ]]
+	then
+		local paren_offset=''
+		if ! paren_offset="$(echo "$plugin_list" | grep -b -o \) | cut -d':' -f1 | head -n1)"
+		then
+			paren_offset=''
+		fi
+		warn "Warning: make sure ssh-agent is inside of the ${_color_WHITE}plugins=()$_color_yellow list"
+		warn "         it should be between the parenthesis not after the closing one"
+		warn "         please have a look at the $_color_RED$HOME/.zshrc$_color_yellow file"
+		warn "         in line $_color_RED$plugin_list_line"
+		warn ""
+		warn "         $plugin_list"
+		warn -n "         "
+		underline_str "$plugin_list" "$paren_offset"
+		warn ""
+	fi
 	# Using bash eval to check the zshrc plugin list
 	# is technically not correct.
 	# But it does the job to detect most of the student
@@ -1770,6 +1832,11 @@ function check_zshrc_plugins() {
 		warn "Warning: there might be a syntax error in the ${_color_WHITE}plugins=()$_color_yellow list"
 		warn "         please have a look at the $_color_RED$HOME/.zshrc$_color_yellow file"
 		warn "         in line $_color_RED$plugin_list_line"
+		warn ""
+		warn "         $plugin_list"
+		warn -n "         "
+		underline_str "$plugin_list"
+		warn ""
 	fi
 }
 
