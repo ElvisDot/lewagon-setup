@@ -1556,6 +1556,13 @@ function check_postgres_running_linux() {
 }
 
 function check_postgres_health() {
+	if psql -lqt -U "$(whoami)" &> /dev/null
+	then
+		# we cann login and list databases using our user
+		# assume everything is OK
+		# to avoid prompting for sudo password on healthy systems
+		return
+	fi
 	if ! sudo -u postgres psql -d postgres -c '\l' > /dev/null
 	then
 		warn "Warning: failed to list postgres databases"
@@ -1567,8 +1574,48 @@ function check_postgres_health() {
 	fi
 }
 
+function check_postgres_role() {
+	if psql -lqt -U "$(whoami)" &> /dev/null
+	then
+		# we cann login and list databases using our user
+		# assume everything is OK
+		# to avoid prompting for sudo password on healthy systems
+		return
+	fi
+	if [ "$USER" == "root" ]
+	then
+		warn "Warning: can not check postgres role when running as root"
+		return
+	fi
+	local username
+	if ! username="$(id -u -n)"
+	then
+		warn "Warning: failed to check postgres role"
+		return
+	fi
+	if [ "$USER" != "$username" ] || [ "$USER" == "" ]
+	then
+		warn "Warning: failed to check postgres role USER='$USER' username='$username'"
+		return
+	fi
+	if [[ ! "$USER" =~ ^[a-z][-a-z0-9_]*$ ]]
+	then
+		warn "Warning: failed to check postgres role USER='$USER' (invalid name)"
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+	if ! sudo -u postgres psql -d postgres -c "SELECT * FROM pg_roles WHERE rolname = '$USER';" | grep -q '1 row'
+	then
+		warn "Warning: missing postgresql role"
+		warn "         try running this command"
+		warn ""
+		warn "         ${_color_WHITE}sudo -u postgres psql --command 'CREATE ROLE \"$(whoami)\" LOGIN createdb superuser;'"
+		warn ""
+	fi
+}
+
 function check_database() {
-	# TODO: check that the user was created and its enabled
 	# TODO: persist postgres start command on wsl in zshrc
 	check_postgres_and_sqlite_installed
 	if is_mac
@@ -1578,6 +1625,7 @@ function check_database() {
 		check_postgres_running_linux
 	fi
 	check_postgres_health
+	check_postgres_role
 }
 
 function check_sip_mac() {
