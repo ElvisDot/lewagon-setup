@@ -2498,6 +2498,15 @@ function check_c_compiler() {
 	fi
 }
 
+function check_locale() {
+	if ! locale 2>&1 | grep -q "No such file or directory"
+	then
+		return
+	fi
+	sudo locale-gen "en_US.UTF-8"
+	sudo dpkg-reconfigure locales
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2537,6 +2546,7 @@ function main() {
 	check_zshrc_contents
 	check_zprofile_contents
 	check_c_compiler
+	check_locale
 	if is_web
 	then
 		check_ruby
