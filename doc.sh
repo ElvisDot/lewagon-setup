@@ -345,6 +345,19 @@ function detect_user() {
 	# grep -Ev '(^root:|^postgres:|nologin$|false$|sync$)' /etc/passwd | cut -d':' -f1 | head -n1
 }
 
+function pwsh() {
+	local powershell_command="$1"
+	if [ ! -x "$(command -v powershell.exe)" ]
+	then
+		error "Error: powershell.exe not found" 1>&2
+		exit 1
+	fi
+	if ! powershell.exe -c "$powershell_command"
+	then
+		exit 1
+	fi
+}
+
 function password_note() {
 	# todo: instead of prining some messages on howto change the password
 	#       just run the passwd command and input the old password already
@@ -437,7 +450,7 @@ function check_user_windows() {
 		usermod -aG docker "$username"
 	fi
 
-	powershell.exe -c "ubuntu config --default-user $username"
+	pwsh "ubuntu config --default-user $username"
 	warn "Warning: please restart your terminal"
 	exit 1
 }
@@ -603,11 +616,15 @@ function device_info() {
 	if is_windows
 	then
 		local winver
-		winver="$(powershell.exe -c "[System.Environment]::OSVersion.Version.Major" | tr -d '\r')"
-		# note that winver is 10 on windows 11 but it is less than 10 on windows 8
-		if [ "$winver" -lt "10" ]
+		if winver="$(pwsh "[System.Environment]::OSVersion.Version.Major" | tr -d '\r')"
 		then
-			warn "Warning: your windows is outdated please do a update"
+			# note that winver is 10 on windows 11 but it is less than 10 on windows 8
+			if [ "$winver" -lt "10" ]
+			then
+				warn "Warning: your windows is outdated please do a update"
+			fi
+		else
+			warn "Warning: failed to get windows version"
 		fi
 		# intentionally check for 1 instead of
 		# less than 2 or unequal 2
@@ -2178,7 +2195,7 @@ function check_zscaler_ssl() {
 function check_if_custom_anti_virus_is_running() {
 	local anti_viruses=''
 	if ! anti_viruses="$(
-		powershell.exe \
+		pwsh \
 			"Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct" \
 			| grep displayName
 	)"
