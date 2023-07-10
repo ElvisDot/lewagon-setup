@@ -1395,19 +1395,35 @@ function check_github_access() {
 	exit 1
 }
 
-function fix_gitsome() {
-	is_mac && return
+function check_gh_cli() {
+	if is_mac
+	then
+		if [ ! -x "$(command -v gh)" ]
+		then
+			brew install gh
+		fi
+		return
+	fi
+	if gh --version 2>&1 | grep -q 'github.com/cli/cli/releases'
+	then
+		return
+	fi
 
 	if [ ! -x "$(command -v curl)" ]
 	then
 		sudo apt-get install -y curl
 	fi
 	# gh command can conflict with gitsome if already installed
-	sudo apt-get remove -y gitsome
+	if [ -x "$(command -v gh)" ]
+	then
+		log "Found gitsome! Uninstalling and installing gh cli instead"
+		sudo apt-get remove -y gitsome
+	fi
 	curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
 	echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" |
 		sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
 	sudo apt-get update -y
+	sudo apt-get install -y gh
 }
 
 function check_package_manager_programs() {
@@ -1447,14 +1463,6 @@ function check_package_manager_programs() {
 	then
 		brew install "${programs[@]}"
 	else
-		for prog in "${programs[@]}"
-		do
-			if [ "$prog" == "gh" ]
-			then
-				fix_gitsome
-				break
-			fi
-		done
 		sudo apt-get install -y "${programs[@]}"
 	fi
 }
@@ -2564,6 +2572,7 @@ function main() {
 	detect_bootcamp
 	check_vscode
 	check_package_manager_programs
+	check_gh_cli
 	check_github_access
 	if ! check_dotfiles
 	then
