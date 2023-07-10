@@ -1592,9 +1592,28 @@ function check_postgres_running_mac() {
 }
 
 function check_postgres_running_linux() {
+	if [ -f /etc/init.d/postgresql ]
+	then
+		if ! /etc/init.d/postgresql status &>/dev/null
+		then
+			if [ "$arg_fix" == "1" ]
+			then
+				log "starting postgresql service ..."
+				sudo /etc/init.d/postgresql start
+			else
+				warn "Warning: postgresql service is not running"
+				warn "         try starting postgres using this command"
+				warn ""
+				warn "         ${_color_WHITE}sudo /etc/init.d/postgresql start"
+				warn ""
+				warn "         to fix it automatically"
+				warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
+			fi
+		fi
+		return
+	fi
 	if ! pidof -q systemd
 	then
-		# TODO: support sysvinit
 		warn "Warning: failed to detect postgres health"
 		return
 	fi
@@ -2056,6 +2075,26 @@ function check_zshrc_contents() {
 		if ! grep -qF 'eval "$(rbenv init -)"' ~/.zshrc
 		then
 			warn "Warning: rbenv is not initialized in your ~/.zshrc"
+		fi
+		if is_windows
+		then
+			if ! grep -E '[^#]*sudo /etc/init.d/postgresql start' ~/.zshrc
+			then
+				if [ "$arg_fix" == "1" ]
+				then
+					if [ ! -f /etc/init.d/postgresql ]
+					then
+						warn "Warning: /etc/init.d/postgresql file not found"
+					else
+						log "adding postgres start to zshrc"
+						echo "sudo /etc/init.d/postgresql start" >> ~/.zshrc
+					fi
+				else
+					warn "Warning: postgresql is not started in your ~/.zshrc"
+					warn "         to fix it automatically"
+					warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
+				fi
+			fi
 		fi
 	fi
 
