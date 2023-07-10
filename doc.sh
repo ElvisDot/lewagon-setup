@@ -37,7 +37,7 @@ MIN_DISK_SPACE_GB=10
 WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
-WANTED_NODE_VERSION='v16.15.1'
+WANTED_NODE_VERSION='16.15.1'
 WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
@@ -105,6 +105,17 @@ function show_help() {
 }
 
 function wanted_node_version() {
+	if is_doc_deprecated
+	then
+		local node_version
+		if node_version="$(curl -s https://raw.githubusercontent.com/lewagon/setup/master/windows.md | grep 'nvm install ' | awk '{ print $3 }')"
+		then
+			if [[ "$node_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+			then
+				WANTED_NODE_VERSION="$node_version"
+			fi
+		fi
+	fi
 	echo "$WANTED_NODE_VERSION"
 }
 
