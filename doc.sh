@@ -2555,6 +2555,50 @@ function check_locale() {
 	update-locale LANG=en_US.UTF-8
 }
 
+function check_browser_env() {
+	# Do not assume zshrc was correctly sourced since we are
+	# a bash script
+	# if [ "$BROWSER" != "" ]
+	# then
+	# 	if [ ! -f "$BROWSER" ]
+	# 	then
+	# 		warn "Warning: your BROWSER points to: $_color_RED$BROWSER"
+	# 		warn "         but there is no file found at that location"
+	# 		warn "         check your ~/.zshrc file and update the BROWSER"
+	# 		warn "         to point to your actual browser executable"
+	# 	fi
+	# 	return
+	# fi
+	if grep -qE '[^#]*BROWSER' ~/.zshrc
+	then
+		return
+	fi
+	local browser_paths
+	local browser_path
+	browser_paths=(
+		'/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe'
+		'/mnt/c/Program Files/Google/Chrome/Application/chrome.exe'
+		'/mnt/c/Program Files (x86)/Mozilla Firefox/firefox.exe'
+		'/mnt/c/Program Files/Mozilla Firefox/firefox.exe'
+		'/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
+		'/usr/bin/chromium'
+		'/usr/bin/firefox'
+	)
+	for browser_path in "${browser_paths[@]}"
+	do
+		[[ -f "$browser_path" ]] || continue
+
+		local exe
+		exe="${browser_path##*/}"
+		log "Setting $_color_GREEN$exe$_color_RESET as BROWSER"
+		echo "export BROWSER=\"$browser_path\"" >> ~/.zshrc
+		echo "export GH_BROWSER=\"'$browser_path'\"" >> ~/.zshrc
+		return
+	done
+
+	warn "Warning: did not find any browser exe on your system"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2596,6 +2640,7 @@ function main() {
 	check_zprofile_contents
 	check_c_compiler
 	check_locale
+	check_browser_env
 	if is_web
 	then
 		check_ruby
