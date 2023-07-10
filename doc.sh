@@ -2543,7 +2543,8 @@ function check_locale() {
 		return
 	fi
 	sudo locale-gen "en_US.UTF-8"
-	sudo dpkg-reconfigure locales
+	sudo dpkg-reconfigure --frontend=noninteractive locales
+	update-locale LANG=en_US.UTF-8
 }
 
 function main() {
