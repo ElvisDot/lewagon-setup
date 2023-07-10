@@ -2038,6 +2038,41 @@ function check_zshrc_contents() {
 	assert_num_file_lines ~/.zshrc 60 110
 	assert_num_dupe_lines ~/.zshrc 6
 	check_zshrc_plugins
+
+	# shellcheck disable=SC2016
+	if ! grep -qF 'source "${ZSH}/oh-my-zsh.sh"' ~/.zshrc
+	then
+		warn "Warning: oh-my-zsh is not loaded in your ~/.zshrc"
+	fi
+
+	if is_web
+	then
+		# shellcheck disable=SC2016
+		if ! grep -qE '^[^#]*(\.|source) "\$NVM_DIR/nvm.sh"' ~/.zshrc
+		then
+			warn "Warning: nvm.sh is not loaded in your ~/.zshrc"
+		fi
+		# shellcheck disable=SC2016
+		if ! grep -qF 'eval "$(rbenv init -)"' ~/.zshrc
+		then
+			warn "Warning: rbenv is not initialized in your ~/.zshrc"
+		fi
+	fi
+
+	# shellcheck disable=SC2016
+	if ! grep -qE '^[^#]*(\.|source) "\$HOME/.aliases"' ~/.zshrc
+	then
+		warn "Warning: .aliases not loaded in your ~/.zshrc"
+	fi
+
+	if ! grep -q '[^#]EDITOR=' ~/.zshrc
+	then
+		warn "Warning: the EDITOR variable is not set in your ~/.zshrc"
+	elif ! grep -q '[^#]EDITOR=code' ~/.zshrc
+	then
+		warn "Warning: your EDTIOR variable is not set to code in your ~/.zshrc"
+		grep -n '[^#]EDITOR=code' ~/.zshrc
+	fi
 }
 
 function check_pyenv_in_zprofile() {
