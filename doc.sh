@@ -2438,6 +2438,31 @@ function check_git_init_in_fullstack_challenges() {
 	fi
 }
 
+function check_c_compiler() {
+	# TODO: test this. I just assumed this works.
+	if is_mac && (clang++;clang;g++;gcc) 2>&1 | grep -q "missing xcrun"
+	then
+		error "Error: macOS developer tools seem broken!"
+		error "       try reinstalling them using this command"
+		error ""
+		error "       ${_color_WHITE}xcode-select --install"
+		error ""
+		return
+	fi
+	if g++ 2>&1 | grep -q "no input files" && gcc 2>&1 | grep -q "no input files"
+	then
+		return
+	fi
+	if clang++ 2>&1 | grep -q "no input files" && clang 2>&1 | grep -q "no input files"
+	then
+		return
+	fi
+	if is_web
+	then
+		sudo apt-get install -y build-essential tklib zlib1g-dev libssl-dev libffi-dev libxml2 libxml2-dev libxslt1-dev libreadline-dev
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2476,6 +2501,7 @@ function main() {
 	fi
 	check_zshrc_contents
 	check_zprofile_contents
+	check_c_compiler
 	if is_web
 	then
 		check_ruby
