@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1688743602
+LAST_DOC_UPDATE=1688975879
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -347,6 +347,10 @@ function password_note() {
 	echo 'echo "to change it run this command:"'
 	echo 'echo ""'
 	echo 'echo "  passwd"'
+	echo 'echo ""'
+	echo 'echo "To remove this note run this command:"'
+	echo 'echo ""'
+	echo 'echo "  code ~/.zshrc"'
 	echo 'echo ""'
 }
 
