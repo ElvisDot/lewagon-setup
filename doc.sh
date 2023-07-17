@@ -1309,6 +1309,20 @@ function check_github_access() {
 		error ""
 		exit 1
 	fi
+	local git_protocol
+	if ! git_protocol="$(gh config get git_protocol --host github.com)"
+	then
+		warn "Warning: failed to detect github cli protocol"
+	else
+		if [ "$git_protocol" == "https" ]
+		then
+			log "Changing github cli git protocol from ${_color_yellow}https${_color_RESET} to ${_color_green}ssh"
+			gh config set git_protocol ssh --host github.com
+		elif [ "$git_protocol" != "ssh" ]
+		then
+			warn "Warning: got unexpected github cli git protocol '$git_protocol'"
+		fi
+	fi
 	local is_logged_in=1
 	if [ "$arg_full" == "1" ] && [ "$GITHUB_CI" == "" ]
 	then
