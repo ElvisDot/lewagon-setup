@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1688975879
+LAST_DOC_UPDATE=1689587316
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -2552,7 +2552,7 @@ function check_locale() {
 	fi
 	sudo locale-gen "en_US.UTF-8"
 	sudo dpkg-reconfigure --frontend=noninteractive locales
-	update-locale LANG=en_US.UTF-8
+	sudo update-locale LANG=en_US.UTF-8
 }
 
 function check_browser_env() {
