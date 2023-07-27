@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1689587316
+LAST_DOC_UPDATE=1690462279
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -715,11 +715,33 @@ function fix_dns_wsl() {
 			sudo rm /etc/resolv.conf
 			log "Updating $_color_WHITE/etc/resolv.conf$_color_RESET to fix dns."
 			log "The old resolv.conf is backed up at $_color_green$backup_conf$_color_RESET"
+		elif [ -L /etc/resolv.conf ]
+		then
+			wrn "Warning: /etc/resolv.conf is an invalid symlink"
+			log "Cleaning up /etc/resolv.conf ..."
+			sudo rm -f /etc/resolv.conf
+		fi
+		if [ -f /etc/wsl.conf ]
+		then
+			local backup_conf
+			if ! backup_conf="$(mktemp /tmp/lewagon-doc/XXXXXX_wsl.conf.backup)"
+			then
+				error "Error: failed to create temp backup file"
+				exit 1
+			fi
+			cat /etc/wsl.conf > "$backup_conf"
+			log "Updating $_color_WHITE/etc/wsl.conf$_color_RESET to fix dns."
+			log "The old wsl.conf is backed up at $_color_green$backup_conf$_color_RESET"
 		fi
 		sudo bash -c 'echo "nameserver 8.8.8.8" > /etc/resolv.conf'
 		sudo bash -c 'echo "[network]" > /etc/wsl.conf'
 		sudo bash -c 'echo "generateResolvConf = false" >> /etc/wsl.conf'
-		sudo chattr +i /etc/resolv.conf
+		if ! sudo chattr +i /etc/resolv.conf
+		then
+			warn "Warning: the chattr command failed falling back to boot command"
+			sudo bash -c 'echo "[boot]" >> /etc/wsl.conf'
+			sudo bash -c 'echo "command=\"echo '"'"'nameserver 8.8.8.8'"'"' > /etc/resolv.conf"\" >> /etc/wsl.conf'
+		fi
 		return
 	fi
 	error "Error: your dns is not working. Try running these commands"
