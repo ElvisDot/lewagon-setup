@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1690462279
+LAST_DOC_UPDATE=1692692227
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -808,6 +808,51 @@ function check_vscode() {
 		warn ""
 		warn "$_color_WHITE  mv ~/Downloads/Visual\ Studio\ Code.app /Applications  $_color_RESET"
 		warn ""
+	fi
+	if is_windows
+	then
+		if ! echo "$PATH" | grep -q "/mnt/c/.*/username/AppData/Local/Programs/Microsoft VS Code/bin"
+		then
+			local path_overwrites
+			# shellcheck disable=SC2016
+			path_overwrites="$(grep -n PATH= ~/.zshrc ~/.zprofile | grep -Ev '(\$PATH|\${PATH})')"
+			warn "Warning: vscode does not seem to be in your PATH"
+			warn "         this might be caused by someone overwriting PATH"
+			warn "         check the files ~/.zprofile and ~/.zshrc"
+			if [ "$path_overwrites" != "" ]
+			then
+				warn "         The doctor found these lines that may cause issues:"
+				local path_overwrite
+				for path_overwrite in $path_overwrites
+				do
+					warn "           $_color_red$path_overwrite"
+				done
+			fi
+			warn ""
+			warn "         Alternativley you can try reinstalling vscode on your windows system"
+		fi
+	fi
+}
+
+# the doctor would not work at all if the PATH
+# is that broken
+function check_path_overwritten() {
+	if echo "$PATH" | grep -q '/bin'
+	then
+		return
+	fi
+	local path_overwrites
+	# shellcheck disable=SC2016
+	path_overwrites="$(grep -n PATH= ~/.zshrc ~/.zprofile | grep -Ev '(\$PATH|\${PATH})')"
+	warn "Warning: your PATH does not look healthy"
+	if [ "$path_overwrites" != "" ]
+	then
+		warn "         The doctor found these lines that may cause issues:"
+		local path_overwrite
+		for path_overwrite in $path_overwrites
+		do
+			warn "           $_color_red$path_overwrite"
+		done
 	fi
 }
 
@@ -2650,6 +2695,7 @@ function main() {
 		check_windows_anti_virus
 	fi
 	detect_bootcamp
+	# check_path_overwritten
 	check_vscode
 	check_package_manager_programs
 	check_gh_cli
