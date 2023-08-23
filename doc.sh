@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1692692227
+LAST_DOC_UPDATE=1692785451
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -2637,6 +2637,9 @@ function check_locale() {
 }
 
 function check_browser_env() {
+	# on mac browsers usually just work
+	is_mac && return
+
 	# Do not assume zshrc was correctly sourced since we are
 	# a bash script
 	# if [ "$BROWSER" != "" ]
