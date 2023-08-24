@@ -269,6 +269,12 @@ function okay() {
 	printf '%b[%b+%b]%b %b\n' "$_color_WHITE" "$_color_GREEN" "$_color_WHITE" "$_color_RESET" "$1"
 }
 
+function dbg() {
+	[ "$arg_verbose" -gt "0" ] || return
+
+	printf '%b[*]%b %b\n' "$_color_WHITE" "$_color_RESET" "$1"
+}
+
 function check_ssl() {
 	local host
 	local hosts=(https://github.com https://lewagon.com https://google.com)
@@ -770,6 +776,7 @@ function fix_dns_wsl() {
 }
 
 function check_basics() {
+	dbg "checking internet connectivity ..."
 	if ! check_dns
 	then
 		fail_if_no_internet
@@ -1191,6 +1198,7 @@ function install_ruby() {
 }
 
 function check_ruby() {
+	dbg "checking ruby ..."
 	if [ ! -x "$(command -v rbenv)" ]
 	then
 		install_rbenv
@@ -1295,6 +1303,7 @@ function run_dotfiles_install() {
 }
 
 function check_dotfiles() {
+	dbg "checking dotfiles ..."
 	local dotfiles=(
 		~/.aliases
 		~/.gitconfig
@@ -1371,11 +1380,13 @@ function check_docker_running() {
 }
 
 function check_docker() {
+	dbg "checking docker ..."
 	check_docker_installed
 	check_docker_running
 }
 
 function check_github_access() {
+	dbg "checking github access ..."
 	if [ ! -x "$(command -v gh)" ]
 	then
 		error "Error: failed to find the github cli"
@@ -1522,6 +1533,7 @@ function check_gh_cli() {
 }
 
 function check_package_manager_programs() {
+	dbg "checking installed programs ..."
 	local programs=()
 	local prog
 	if is_mac && is_data
@@ -1824,6 +1836,7 @@ function check_postgres_create_db() {
 }
 
 function check_database() {
+	dbg "checking database ..."
 	# TODO: persist postgres start command on wsl in zshrc
 	check_postgres_and_sqlite_installed
 	if is_mac
@@ -2155,6 +2168,7 @@ function check_zshrc_plugins() {
 }
 
 function check_zshrc_contents() {
+	dbg "checking zshrc ..."
 	[[ -f ~/.zshrc ]] || return
 
 	assert_num_file_lines ~/.zshrc 60 110
@@ -2237,6 +2251,7 @@ function check_pyenv_in_zprofile() {
 }
 
 function check_zprofile_contents() {
+	dbg "checking zprofile ..."
 	[[ -f ~/.zprofile ]] || return
 
 	assert_num_file_lines ~/.zprofile 3 15
@@ -2405,6 +2420,7 @@ function check_windows_anti_virus() {
 }
 
 function check_disk_space() {
+	dbg "checking disk space ..."
 	# only check the / partition
 
 	local avail
@@ -2499,6 +2515,7 @@ function check_asdf_python() {
 }
 
 function check_rails_version() {
+	dbg "checking rails version ..."
 	if [ ! -x "$(command -v rails)" ]
 	then
 		return
@@ -2619,6 +2636,7 @@ function check_git_init_in_fullstack_challenges() {
 }
 
 function check_c_compiler() {
+	dbg "checking C compiler ..."
 	# TODO: test this. I just assumed this works.
 	if is_mac && (clang++;clang;g++;gcc) 2>&1 | grep -q "missing xcrun"
 	then
@@ -2644,6 +2662,7 @@ function check_c_compiler() {
 }
 
 function check_locale() {
+	dbg "checking locale ..."
 	if ! locale 2>&1 | grep -q "No such file or directory"
 	then
 		return
@@ -2654,6 +2673,7 @@ function check_locale() {
 }
 
 function check_browser_env() {
+	dbg "checking BROWSER ..."
 	# on mac browsers usually just work
 	is_mac && return
 
@@ -2701,6 +2721,7 @@ function check_browser_env() {
 }
 
 function check_rubygems() {
+	dbg "checking rubygems.org ..."
 	# only check rubygems if ruby is installed
 	[[ -x "$(command -v ruby)" ]] || return
 
