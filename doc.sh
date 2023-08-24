@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1692785451
+LAST_DOC_UPDATE=1692873381
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -669,13 +669,27 @@ function check_shell() {
 	then
 		return
 	fi
+	if [[ "$(getent passwd "$USER" | awk -F: '{print $NF}')" == "$(command -v zsh)" ]]
+	then
+		# it might not have been applied yet
+		# or the user manually launched a zsh session
+		# but the correct shell is set in the profile
+		# so do not alert
+		return
+	fi
 
 	if [ "$arg_fix" == "0" ]
 	then
 		warn "Warning: zsh is not your default shell"
+		warn "         you can set your default shell by running this command:"
+		warn ""
+		warn "           ${_color_WHITE}chsh -s \"\$(command -v zsh)\""
+		warn ""
+		warn "         or run the doctor with $_color_WHITE--fix"
 	else
 		if [ -x "$(command -v zsh)" ]
 		then
+			log "Setting default shell to ${_color_GREEN}zsh"
 			chsh -s "$(command -v zsh)"
 		else
 			error "Error: did not find zsh"
@@ -746,13 +760,13 @@ function fix_dns_wsl() {
 	fi
 	error "Error: your dns is not working. Try running these commands"
 	error ""
-	error "      ${_color_WHITE}sudo rm /etc/resolv.conf"
-	error "      ${_color_WHITE}sudo bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'"
-	error "      ${_color_WHITE}sudo bash -c 'echo \"[network]\" > /etc/wsl.conf'"
-	error "      ${_color_WHITE}sudo bash -c 'echo \"generateResolvConf = false\" >> /etc/wsl.conf'"
-	error "      ${_color_WHITE}sudo chattr +i /etc/resolv.conf"
+	error "       ${_color_WHITE}sudo rm /etc/resolv.conf"
+	error "       ${_color_WHITE}sudo bash -c 'echo \"nameserver 8.8.8.8\" > /etc/resolv.conf'"
+	error "       ${_color_WHITE}sudo bash -c 'echo \"[network]\" > /etc/wsl.conf'"
+	error "       ${_color_WHITE}sudo bash -c 'echo \"generateResolvConf = false\" >> /etc/wsl.conf'"
+	error "       ${_color_WHITE}sudo chattr +i /etc/resolv.conf"
 	error ""
-	error "      or run the doctor with $_color_WHITE--fix"
+	error "       or run the doctor with $_color_WHITE--fix"
 }
 
 function check_basics() {
@@ -2514,7 +2528,10 @@ function check_rails_version() {
 			warn "         installed via rbenv"
 			return
 		fi
-		gem install rails
+		if ! gem install rails
+		then
+			error "Error: failed to install rails gem"
+		fi
 		return
 	fi
 	warn "Warning: your rails version $_color_RED$major_rails_version$_color_yellow is outdated"
@@ -2683,6 +2700,43 @@ function check_browser_env() {
 	warn "Warning: did not find any browser exe on your system"
 }
 
+function check_rubygems() {
+	# only check rubygems if ruby is installed
+	[[ -x "$(command -v ruby)" ]] || return
+
+	if curl -Lks 'https://git.io/rg-ssl' | ruby &>/dev/null
+	then
+		# connectivity to rubygems.org works
+		return
+	fi
+	local ipv4_fallback=0
+	if [ -f ~/.gemrc ] && grep -q ":ipv4_fallback_enabled: true" ~/.gemrc
+	then
+		ipv4_fallback=1
+	fi
+	if [ "$arg_fix" == "1" ]
+	then
+		if [ "$ipv4_fallback" == "0" ]
+		then
+			log "Enabling ipv4 fallback for rubygems.org ..."
+			echo ":ipv4_fallback_enabled: true" >> ~/.gemrc
+		else
+			log "ipv4 fallback already enabled for rubygems.org"
+		fi
+	else
+		error "Error: failed to connect to rubygems.org"
+		if [ "$ipv4_fallback" == "0" ]
+		then
+			error "       this may be fixed with the ipv4 fallback option"
+			error "       you can enable that by running the following command:"
+			error ""
+			error "         ${_color_WHITE}echo \":ipv4_fallback_enabled: true\" >> ~/.gemrc"
+			error ""
+			error "       or run the doctor with $_color_WHITE--fix"
+		fi
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2735,6 +2789,7 @@ function main() {
 		check_database
 		check_ready_commit_email
 		check_git_init_in_fullstack_challenges
+		check_rubygems
 	elif is_data
 	then
 		check_docker
