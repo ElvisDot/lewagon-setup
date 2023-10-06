@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1692873381
+LAST_DOC_UPDATE=1696587096
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -2691,6 +2691,10 @@ function check_browser_env() {
 	# 	return
 	# fi
 	if grep -qE '[^#]*BROWSER' ~/.zshrc
+	then
+		return
+	fi
+	if grep -qE '[^#]*BROWSER' ~/.zprofile
 	then
 		return
 	fi
