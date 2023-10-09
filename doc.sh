@@ -39,11 +39,14 @@ WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
 WANTED_NODE_VERSION='16.15.1'
 WANTED_RUBY_VERSION='3.1.2'
+WANTED_DOTFILES_SHA=adf05d5bffffc08ad040fb9c491ebea0350a5ba2
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
 LAST_DOC_UPDATE=1696850023
 MAX_DOC_AGE=300
+
+is_dotfiles_old=0
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
 then
@@ -1289,6 +1292,17 @@ function run_dotfiles_install() {
 	if grep "password is 123" ~/.zshrc
 	then
 		is_pass_note=1
+	fi
+
+	if [ "$is_dotfiles_old" == "1" ]
+	then
+		warn "Warning: skipping dotfiles setup because your dotfiles are outdated"
+		warn "         please run this manually"
+		warn ""
+		warn "           ${_color_WHITE}cd $PWD"
+		warn "           ${_color_WHITE}zsh install.sh"
+		warn ""
+		return
 	fi
 
 	zsh install.sh
@@ -2799,6 +2813,41 @@ function check_jupyter_config() {
 	fi
 }
 
+function check_dotfiles_version() {
+	local dotfiles_dir=''
+	dotfiles_dir="$(get_code_user_dir)"
+	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
+	then
+		return
+	fi
+	cd "$dotfiles_dir"/dotfiles || { error "Error: something went wrong"; exit 1; }
+
+	[[ -x "$(command -v git)" ]] || return
+	if [[ ! -d .git ]]
+	then
+		warn "Warning: there is no .git folder in $_color_WHITE$PWD"
+		warn "         that is weird but might be okay if you know what you do"
+		return
+	fi
+
+	if ! git rev-parse -q --verify "$WANTED_DOTFILES_SHA^{commit}" > /dev/null
+	then
+		local github_username='yourusername'
+		if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
+		then
+			github_username="${BASH_REMATCH[1]}"
+		fi
+		warn "Warning: seems like your dotfiles are outdated"
+		warn "         goto https://github.com/$github_username/dotfiles in your browser"
+		warn "         and click on sync fork"
+		warn "         and then run this command:"
+		warn ""
+		warn "           ${_color_WHITE}cd $PWD && git pull"
+		warn ""
+		is_dotfiles_old=1
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2819,6 +2868,7 @@ function main() {
 	check_package_manager_programs
 	check_gh_cli
 	check_github_access
+	check_dotfiles_version
 	if ! check_dotfiles
 	then
 		# do not continue if no dotfiles are found

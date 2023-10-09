@@ -27,3 +27,7 @@ WANTED_RUBY_VERSION="$(grep '^WANTED_RUBY_VERSION=' doc.sh | cut -d"'" -f2)"
 latest_ruby_version="$(curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep "^REQUIRED_RUBY_VERSION" | cut -d'"' -f2)"
 check_match Ruby "$WANTED_RUBY_VERSION" "$latest_ruby_version"
 
+WANTED_DOTFILES_SHA="$(grep '^WANTED_DOTFILES_SHA=' doc.sh | cut -d"'" -f2)"
+latest_dotfiles_sha="$(curl -s https://api.github.com/repos/lewagon/dotfiles/commits/master | jq -r .sha)"
+check_match dotfiles "$WANTED_DOTFILES_SHA" "$latest_dotfiles_sha"
+
