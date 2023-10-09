@@ -42,7 +42,7 @@ WANTED_RUBY_VERSION='3.1.2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1696587096
+LAST_DOC_UPDATE=1696850023
 MAX_DOC_AGE=300
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
@@ -2787,6 +2787,13 @@ function main() {
 		# do not continue if no dotfiles are found
 		error "Error: missing dotfiles aborting"
 		exit 1
+	fi
+	# TODO: remove next batch
+	local git_email
+	git_email="$(git config --global user.email)"
+	if [ "$git_email" == "catriona.beamish@gmail.com" ]
+	then
+		warn "Warning: your git email is set to $_color_red$git_email"
 	fi
 	if ! check_github_name_matches
 	then
