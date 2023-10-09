@@ -2762,6 +2762,43 @@ function check_rubygems() {
 	fi
 }
 
+function check_jupyter_config() {
+	is_windows || return
+	[[ -x "$(command -v jupyter)" ]] || return
+
+	local py_cfg="$HOME/.jupyter/jupyter_notebook_config.py"
+	if [[ ! -f "$py_cfg" ]]
+	then
+		warn "Warning: did not find jupyter config file $_color_red$py_cfg"
+		warn "         try running this command:"
+		warn ""
+		warn "           ${_color_WHITE}jupyter notebook --generate-config"
+		warn ""
+		return
+	fi
+	if ! python -m py_compile "$py_cfg"
+	then
+		warn "Warning: seems like there is a syntax issue in your jupyter config"
+		warn "         have a look at the file"
+		warn ""
+		warn "           ${_color_WHITE}code $py_cfg"
+		warn ""
+		return
+	fi
+	if ! grep -q '^c.NotebookApp.use_redirect_file = False' "$py_cfg"
+	then
+		warn "Warning: did not find redirect being set to false in your jupyter config"
+		warn "         make sure to add the following line to the file:"
+		warn ""
+		warn "           ${_color_green}c.NotebookApp.use_redirect_file = False"
+		warn ""
+		warn "         edit the file with the following command"
+		warn ""
+		warn "           ${_color_WHITE}code $py_cfg"
+		warn ""
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -2826,6 +2863,7 @@ function main() {
 	then
 		check_docker
 		check_asdf_python
+		check_jupyter_config
 	fi
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
 	then
