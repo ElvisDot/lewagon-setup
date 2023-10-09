@@ -1910,6 +1910,7 @@ function check_github_name_matches() {
 	then
 		return 1
 	fi
+	log "Found github name $_color_green$github_username"
 	if [ "$github_username" != "$code_dir_username" ]
 	then
 		warn "Warning: there are two usernames found"
