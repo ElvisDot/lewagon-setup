@@ -43,7 +43,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1696920641
+LAST_DOC_UPDATE=1696931820
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1558,13 +1558,13 @@ function check_package_manager_programs() {
 		done
 		# todo: check readline
 	else # linux/windows
-		for prog in unzip vim zsh tree
+		for prog in unzip vim zsh
 		do
 			[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 		done
 	fi
 
-	for prog in git jq gh wget openssl tree
+	for prog in git jq gh wget openssl
 	do
 		[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 	done
