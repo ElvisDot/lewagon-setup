@@ -43,7 +43,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1696931820
+LAST_DOC_UPDATE=1697112972
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1910,6 +1910,10 @@ function check_github_name_matches() {
 	then
 		return 1
 	fi
+	# could also check if ssh and gh cli use the same name
+	# gh api user | jq -r .login
+	# but should differ rarely and slows down the doctor
+	# so it might not be worth it
 	log "Found github name $_color_green$github_username"
 	if [ "$github_username" != "$code_dir_username" ]
 	then
@@ -2778,6 +2782,7 @@ function check_rubygems() {
 }
 
 function check_jupyter_config() {
+	dbg "checking jupyter config ..."
 	is_windows || return
 	[[ -x "$(command -v jupyter)" ]] || return
 
@@ -2815,6 +2820,7 @@ function check_jupyter_config() {
 }
 
 function check_dotfiles_version() {
+	dbg "checking dotfiles version ..."
 	local dotfiles_dir=''
 	dotfiles_dir="$(get_code_user_dir)"
 	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
@@ -2846,6 +2852,58 @@ function check_dotfiles_version() {
 		warn "           ${_color_WHITE}cd $PWD && git pull"
 		warn ""
 		is_dotfiles_old=1
+	fi
+}
+
+function check_web_gh_webhook() {
+	dbg "checking github webhook ..."
+	[[ -x "$(command -v gh)" ]] || return
+	[[ -x "$(command -v jq)" ]] || return
+
+	local github_username
+	if ! github_username="$(gh api user | jq -r .login)"
+	then
+		error "Error: failed get get github name from gh cli"
+		return
+	fi
+	if [ "$github_username" == "" ]
+	then
+		error "Error: github name is empty. This is probably a bug of the doctor."
+		error "       please report this issue here"
+		error ""
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+	fi
+	local hooks_json
+	if ! hooks_json="$(gh api "repos/$github_username/fullstack-challenges/hooks" 2> /dev/null)"
+	then
+		# assume repo is not forked if this fails
+		return
+	fi
+	if [ "$hooks_json" == "[]" ]
+	then
+		warn "Warning: there is no webhook found in your fullstack repo"
+		warn "         https://github.com/$github_username/fullstack-challenges/settings/hooks"
+		warn ""
+		warn "         did you possibly delete your fullstack-challenges repository?"
+		warn "         please contact the kitt engineering team to request a webhook reset"
+		return
+	fi
+	local num_hooks
+	num_hooks="$(echo "$hooks_json" | jq '[.[] | select(.config.url == "https://kitt.lewagon.com/github_webhooks")] | length')"
+	if [ "$num_hooks" -gt "1" ]
+	then
+		warn "Warning: you have multiple kitt hooks on your fullstack repo"
+		warn "         https://github.com/$github_username/fullstack-challenges/settings/hooks"
+		warn "         that may not be a problem but is a bit weird."
+		return
+	fi
+	if [ "$num_hooks" -eq "0" ]
+	then
+		warn "Warning: there is no lewagon webhook found in your fullstack repo"
+		warn "         https://github.com/$github_username/fullstack-challenges/settings/hooks"
+		warn ""
+		warn "         other webhooks were found. Did you maybe edit your webhook?"
+		return
 	fi
 }
 
@@ -2892,6 +2950,7 @@ function main() {
 		if is_web
 		then
 			check_github_org_invite_accept
+			check_web_gh_webhook
 		fi
 		check_git_and_github_email_match
 	fi
