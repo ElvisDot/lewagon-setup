@@ -43,7 +43,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1697112972
+LAST_DOC_UPDATE=1697456602
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1340,6 +1340,7 @@ function check_dotfiles() {
 		# delete it so the lewagon setup can relink it
 		if [ ! -e "$dotfile" ]
 		then
+			log "cleaning up dead symlink ${_color_YELLOW}$dotfile"
 			rm "$dotfile"
 			broken_links=1
 		fi
