@@ -1290,8 +1290,13 @@ function get_code_user_dir() {
 
 		dotfiles_dir="$dir"
 	done
-	# get rid of trailing slash
-	[ "$dotfiles_dir" != "" ] && echo "${dotfiles_dir::-1}"
+	if [ "${BASH_VERSINFO:-0}" -lt 4 ]
+	then
+		echo "$dotfiles_dir"
+	else
+		# get rid of trailing slash
+		[ "$dotfiles_dir" != "" ] && echo "${dotfiles_dir::-1}"
+	fi
 }
 
 function run_dotfiles_install() {
