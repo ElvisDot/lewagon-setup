@@ -678,13 +678,22 @@ function check_shell() {
 	then
 		return
 	fi
-	if [[ "$(getent passwd "$USER" | awk -F: '{print $NF}')" == "$(command -v zsh)" ]]
+	if [ ! -x "$(command -v getent)" ]
 	then
-		# it might not have been applied yet
-		# or the user manually launched a zsh session
-		# but the correct shell is set in the profile
-		# so do not alert
-		return
+		if [[ "$(getent passwd "$USER" | awk -F: '{print $NF}')" == "$(command -v zsh)" ]]
+		then
+			# it might not have been applied yet
+			# or the user manually launched a zsh session
+			# but the correct shell is set in the profile
+			# so do not alert
+			return
+		fi
+	else
+		warn "Warning: failed to check shell because ${_color_red}getent${_color_yellow} is not found"
+		warn "         this is an issue with the doctor and you can ignore it"
+		# TODO: this fails on the github macOS CI
+		#       also /etc/passwd looks different on mac iirc
+		#       so this has to be properly checked with a mac user
 	fi
 
 	if [ "$arg_fix" == "0" ]
