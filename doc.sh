@@ -1378,6 +1378,50 @@ function run_dotfiles_install() {
 		return
 	fi
 
+	if [ ! -f install.sh ] || [ "$(awk NF install.sh | wc -l)" == "0" ]
+	then
+		log "The $_color_yellow$PWD/install.sh$_color_RESET is empty or missing. Trying git restore."
+		git checkout install.sh
+	fi
+	if [ ! -f install.sh ]
+	then
+		error "Error: missing install.sh script in dotfiles folder"
+		error "       expected the following file to exist:"
+		error "       ${_color_YELLOW}$PWD/install.sh"
+		exit 1
+	fi
+	if [ "$(awk NF install.sh | wc -l)" == "0" ]
+	then
+		error "Error: empty install.sh script in dotfiles folder"
+		error "       expected the following file to have contents:"
+		error "       ${_color_YELLOW}$PWD/install.sh"
+		exit 1
+	fi
+	assert_num_file_lines "$PWD/install.sh" 20 150
+	local install_sh_firstline
+	if ! install_sh_firstline="$(head -n1 install.sh)"
+	then
+		error "Error: failed to get install.sh contents"
+		error "       ${_color_WHITE}head -n1 $PWD/install.sh"
+		exit 1
+	fi
+	if [ "$install_sh_firstline" != '#!/bin/zsh' ]
+	then
+		warn "Warning: ${_color_WHITE}$PWD/install.sh$_color_yellow does not start with a zsh shebang"
+		warn "         expected: ${_color_green}#!/bin/zsh"
+		warn "              got: ${_color_red}$install_sh_firstline"
+		if [ "$install_sh_firstline" == "" ]
+		then
+			local non_empty_line
+			if ! non_empty_line="$(grep -vnH '^[[:space:]]*$' install.sh | head -n1)"
+			then
+				warn "Warning: failed to get first non empty line of install.sh"
+			else
+				warn "         first non empty line: ${_color_WHITE}$non_empty_line"
+			fi
+		fi
+	fi
+
 	log "running ${_color_green}cd $PWD && zsh install.sh"
 	zsh install.sh
 
