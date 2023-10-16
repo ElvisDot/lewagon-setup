@@ -43,7 +43,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1697456602
+LAST_DOC_UPDATE=1697470506
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1257,15 +1257,32 @@ function check_ruby() {
 
 function get_code_user_dir() {
 	local dotfiles_dir=''
+	local dotfiles_needed=1
+	if [ "$1" == "--no-dotfiles-needed" ]
+	then
+		dotfiles_needed=0
+	fi
 	for dir in ~/code/*/
 	do
+		local dirname
+		dirname="$(basename "$dir")"
 		[[ -d "$dir" ]] || return 1
-		[[ "$(basename "$dir")" =~ [Ll]e[Ww]agon ]] && continue
-		[[ ! -d "$dir"/dotfiles ]] && continue
+		[[ "$dirname" =~ ^[Ll]e[Ww]agon$ ]] && continue
+		[[ "$dirname" =~ ^workshops?$ ]] && continue
+		[[ "$dirname" =~ ^students?$ ]] && continue
+		[[ "$dirname" =~ ^lectures?$ ]] && continue
+		[[ "$dirname" == livecode ]] && continue
+		[[ "$dirname" == tmp ]] && continue
+		[[ "$dirname" == reboot ]] && continue
+		if [ "$dotfiles_needed" == "1" ]
+		then
+			[[ ! -d "$dir"/dotfiles ]] && continue
+		fi
 
 		dotfiles_dir="$dir"
 	done
-	echo "$dotfiles_dir"
+	# get rid of trailing slash
+	[ "$dotfiles_dir" != "" ] && echo "${dotfiles_dir::-1}"
 }
 
 function run_dotfiles_install() {
@@ -1274,17 +1291,73 @@ function run_dotfiles_install() {
 	dotfiles_dir="$(get_code_user_dir)"
 	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
 	then
-		error "Error: you are missing the dotfiles folder"
-		error "       follow those steps again"
-		error ""
-		if is_mac
+		dotfiles_dir="$(get_code_user_dir --no-dotfiles-needed)"
+		local github_username=''
+		if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
 		then
-			error "       https://github.com/lewagon/setup/blob/master/macos.md#dotfiles-standard-configuration"
-		else
-			error "       https://github.com/lewagon/setup/blob/master/windows.md#dotfiles-standard-configuration"
+			github_username="${BASH_REMATCH[1]}"
+			dotfiles_dir="$HOME/code/$github_username"
+			if [ ! -d "$dotfiles_dir" ]
+			then
+				log "Creating folder $_color_green$dotfiles_dir"
+				if ! mkdir "$dotfiles_dir"
+				then
+					error "Error: failed to create $dotfiles_dir"
+					exit 1
+				fi
+			fi
 		fi
-		error ""
-		exit 1
+		local found_wrong_dotfiles=''
+		if [ -d "$HOME/code/dotfiles" ]
+		then
+			found_wrong_dotfiles="$HOME/code/dotfiles"
+		elif [ -d "$HOME/dotfiles" ]
+		then
+			found_wrong_dotfiles="$HOME/dotfiles"
+		fi
+		if [ -d "$dotfiles_dir" ] && [ "$dotfiles_dir" != "" ] && [ "$found_wrong_dotfiles" != "" ]
+		then
+			if [ "$arg_fix" == "1" ]
+			then
+				if ! mv "$found_wrong_dotfiles" "$dotfiles_dir/dotfiles"
+				then
+					error "Error: failed to move ~/code/dotfiles to $found_wrong_dotfiles"
+					exit 1
+				fi
+				dotfiles_dir="$(get_code_user_dir)"
+				if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
+				then
+					error "Error: did not find dotfiles directory"
+					exit 1
+				fi
+			else
+				error "Error: did not find dotfiles folder in expected location"
+				error "       but did find it in your code folder"
+				error "       you probably want to move that into the correct location"
+				error ""
+				error "       found:    ${_color_RED}$found_wrong_dotfiles"
+				error "       expected: ${_color_green}$dotfiles_dir/dotfiles"
+				error ""
+				error "       try moving it using the following command:"
+				error ""
+				error "  ${_color_WHITE}mv ~/code/dotfiles $dotfiles_dir/dotfiles"
+				error ""
+				error "       or run the doctor with $_color_WHITE--fix"
+				exit 1
+			fi
+		else
+			error "Error: you are missing the dotfiles folder"
+			error "       follow those steps again"
+			error ""
+			if is_mac
+			then
+				error "       https://github.com/lewagon/setup/blob/master/macos.md#dotfiles-standard-configuration"
+			else
+				error "       https://github.com/lewagon/setup/blob/master/windows.md#dotfiles-standard-configuration"
+			fi
+			error ""
+			exit 1
+		fi
 	fi
 	cd "$dotfiles_dir"/dotfiles || { error "Error: something went wrong"; exit 1; }
 	local is_pass_note=0
@@ -1305,6 +1378,7 @@ function run_dotfiles_install() {
 		return
 	fi
 
+	log "running ${_color_green}cd $PWD && zsh install.sh"
 	zsh install.sh
 
 	if [ "$is_pass_note" == "1" ]
