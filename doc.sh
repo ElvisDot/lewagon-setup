@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 _color_RESET="\e[0m"
-# _color_BLACK="\e[1;30m"
+_color_BLACK="\e[1;30m"
 _color_RED="\e[1;31m"
 _color_GREEN="\e[1;32m"
 _color_YELLOW="\e[1;33m"
@@ -20,6 +20,16 @@ _color_yellow="\e[0;33m"
 # _color_magenta="\e[0;35m"
 # _color_cyan="\e[0;36m"
 # _color_white="\e[0;37m"
+
+# Background
+# _color_bg_black="\033[40m"       # Black
+# _color_bg_red="\033[41m"         # Red
+# _color_bg_green="\033[42m"       # Green
+# _color_bg_yellow="\033[43m"      # Yellow
+# _color_bg_blue="\033[44m"        # Blue
+# _color_bg_purple="\033[45m"      # Purple
+# _color_bg_cyan="\033[46m"        # Cyan
+_color_bg_white="\033[47m"         # White
 
 arg_verbose=0
 arg_full=0
@@ -946,7 +956,7 @@ function gh_auth_status() {
 		echo "$g_gh_auth_status"
 		return 0
 	fi
-	if ! g_gh_auth_status="$(gh auth status)"
+	if ! g_gh_auth_status="$(gh auth status 2>&1)"
 	then
 		g_gh_auth_status=false
 		return 1
@@ -2090,13 +2100,15 @@ function check_git_and_github_email_match() {
 	then
 		return
 	fi
-	github_email="$(gh api user | jq -r '.email')"
+	github_email="$(gh api user | jq -r '.email' | head -n1)"
 	if [ "$github_email" == "null" ]
 	then
 		# TODO: find another way to check
 		#       if it can't find the email here
 		#       this happens when the user
 		#       sets the email to private in the account settings
+		#       and gh cli has no access to the email settings
+		#       which it should if the student followed the setup instructions
 		return
 	fi
 	git_email="$(git config --global user.email)"
@@ -3065,6 +3077,76 @@ function check_web_gh_webhook() {
 	fi
 }
 
+function check_gh_email_public() {
+	[[ -x "$(command -v gh)" ]] || return
+	[[ -x "$(command -v jq)" ]] || return
+	dbg "checking github email visibility ..."
+
+	local gh_status=''
+	if ! gh_status="$(gh_auth_status)"
+	then
+		return
+	fi
+	local scopes
+	if ! scopes="$(echo "$gh_status" | grep -o 'Token scopes:.*' | cut -d':' -f2-)"
+	then
+		error "Error: failed to get github cli scopes"
+		error "       this is likley an issue with the doctor it self"
+		error "       please report it here"
+		error ""
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		error ""
+		exit 1
+	fi
+	if ! [[ "$scopes" == *" user:email"* ]]
+	then
+		warn "Warning: your github cli does not have the user:email scope"
+		warn "         that is fine if you know what you are doing"
+		warn "         to grant that access you can run the following command"
+		warn ""
+		warn "           ${_color_WHITE}gh auth refresh -h github.com -s user:email"
+		warn ""
+		return
+	fi
+
+	local gh_email
+	local gh_visibility
+	if ! gh_email="$(gh api user/emails | jq '.[] | select(.primary==true) | .email' -r)"
+	then
+		warn "Warning: failed to get github cli primary email"
+		warn "         this is likley an issue with the doctor it self"
+		warn "         please report it here"
+		warn ""
+		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
+		warn ""
+		return
+	fi
+	if ! gh_visibility="$(gh api user/emails | jq '.[] | select(.primary==true) | .visibility' -r)"
+	then
+		warn "Warning: failed to get github cli email visibility"
+		warn "         this is likley an issue with the doctor it self"
+		warn "         please report it here"
+		warn ""
+		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
+		warn ""
+		return
+	fi
+	if [ "$gh_visibility" == "private" ]
+	then
+		warn "Warning: your github email visibility is set to private"
+		warn "         this might cause issues if github blocks you from publishing it"
+		warn "         with git pushes. If you can push to fullstack challenges just fine"
+		warn "         ignore this warning."
+		warn "         If your pushing does not work untick this option in your settings"
+		warn ""
+		warn "         ${_color_green}https://github.com/settings/emails"
+		warn "         ${_color_bg_white}${_color_BLACK}[ ] Block command line pushes that expose my email"
+		warn ""
+		return
+	fi
+	log "Found public github email $_color_green$gh_email"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -3112,6 +3194,7 @@ function main() {
 		fi
 		check_git_and_github_email_match
 	fi
+	check_gh_email_public
 	check_zshrc_contents
 	check_zprofile_contents
 	check_c_compiler
