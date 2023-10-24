@@ -32,6 +32,8 @@ bootcamp=unkown
 num_warnings=0
 num_errors=0
 
+g_gh_auth_status=''
+
 MIN_DISK_SPACE_GB=10
 
 WANTED_RAILS_MAJOR_VERSION=7
@@ -43,7 +45,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1697470506
+LAST_DOC_UPDATE=1698144713
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -930,6 +932,29 @@ function detect_bootcamp() {
 	fi
 	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
 }
+
+function gh_auth_status() {
+	# cached auth status
+	# prints empty string and returns 1 if not authed
+	# prints the output of "gh auth status" otherwise
+	if [ "$g_gh_auth_status" == "false" ]
+	then
+		return 1
+	fi
+	if [ "$g_gh_auth_status" != "" ]
+	then
+		echo "$g_gh_auth_status"
+		return 0
+	fi
+	if ! g_gh_auth_status="$(gh auth status)"
+	then
+		g_gh_auth_status=false
+		return 1
+	fi
+	echo "$g_gh_auth_status"
+	return 0
+}
+
 
 function install_rbenv() {
 	if [ -x "$(command -v rbenv)" ]
@@ -2061,7 +2086,7 @@ function check_github_name_matches() {
 function check_git_and_github_email_match() {
 	local github_email
 	local git_email
-	if ! gh auth status &> /dev/null
+	if ! gh_auth_status > /dev/null
 	then
 		return
 	fi
@@ -2113,7 +2138,7 @@ function check_ready_commit_email() {
 	# Kitt is waiting for the student
 	# to push a commit with the correct email
 	# set in the fullstack-challenges repo
-	if ! gh auth status &> /dev/null
+	if ! gh_auth_status > /dev/null
 	then
 		return
 	fi
@@ -2170,7 +2195,7 @@ function check_ready_commit_email() {
 }
 
 function check_github_org_invite_accept() {
-	if ! gh auth status &> /dev/null
+	if ! gh_auth_status &> /dev/null
 	then
 		return
 	fi
