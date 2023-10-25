@@ -2093,59 +2093,6 @@ function check_github_name_matches() {
 	return 1
 }
 
-function check_git_and_github_email_match() {
-	local github_email
-	local git_email
-	if ! gh_auth_status > /dev/null
-	then
-		return
-	fi
-	github_email="$(gh api user | jq -r '.email' | head -n1)"
-	if [ "$github_email" == "null" ]
-	then
-		# TODO: find another way to check
-		#       if it can't find the email here
-		#       this happens when the user
-		#       sets the email to private in the account settings
-		#       and gh cli has no access to the email settings
-		#       which it should if the student followed the setup instructions
-		return
-	fi
-	git_email="$(git config --global user.email)"
-	if [ "$github_email" == "$git_email" ]
-	then
-		return
-	fi
-	warn "Warning: your git email does not match your github one"
-	warn "            git: $_color_RED$git_email"
-	warn "         github: $_color_RED$github_email"
-	if [ "$arg_fix" == "1" ]
-	then
-		log "updating git email to be '$github_email' ..."
-		git config --global user.email "$github_email"
-		local code_dir_username
-		code_dir_username="$(basename "$(get_code_user_dir)")"
-		local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
-		if [ -d "$challenges_dir" ]
-		then
-			cd "$challenges_dir" || return
-			git commit --allow-empty -m "New commit with fixed email"
-			git push origin master
-		fi
-	else
-		warn ""
-		warn "         try running these commands to fix it:"
-		warn ""
-		warn "         ${_color_WHITE}cd ~/code/*/fullstack-challenges"
-		warn "         ${_color_WHITE}git config --global user.email \"$github_email\""
-		warn "         ${_color_WHITE}git commit --allow-empty -m \"New commit with fixed email\""
-		warn "         ${_color_WHITE}git push origin master"
-		warn ""
-		warn "         to fix it automatically"
-		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
-	fi
-}
-
 function check_ready_commit_email() {
 	# Kitt is waiting for the student
 	# to push a commit with the correct email
@@ -3077,7 +3024,7 @@ function check_web_gh_webhook() {
 	fi
 }
 
-function check_gh_email_public() {
+function check_gh_email_public_and_matching() {
 	[[ -x "$(command -v gh)" ]] || return
 	[[ -x "$(command -v jq)" ]] || return
 	dbg "checking github email visibility ..."
@@ -3108,7 +3055,6 @@ function check_gh_email_public() {
 		warn ""
 		return
 	fi
-
 	local gh_email
 	local gh_visibility
 	if ! gh_email="$(gh api user/emails | jq '.[] | select(.primary==true) | .email' -r)"
@@ -3119,6 +3065,11 @@ function check_gh_email_public() {
 		warn ""
 		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
 		warn ""
+		return
+	fi
+	if [ "$gh_email" == "[]" ] || [ "$gh_email" == "null" ]
+	then
+		warn "Warning: your github email is empty"
 		return
 	fi
 	if ! gh_visibility="$(gh api user/emails | jq '.[] | select(.primary==true) | .visibility' -r)"
@@ -3144,7 +3095,40 @@ function check_gh_email_public() {
 		warn ""
 		return
 	fi
-	log "Found public github email $_color_green$gh_email"
+	local git_email
+	git_email="$(git config --global user.email)"
+	if [ "$gh_email" == "$git_email" ]
+	then
+		return
+	fi
+	warn "Warning: your git email does not match your github one"
+	warn "            git: $_color_RED$git_email"
+	warn "         github: $_color_RED$gh_email"
+	if [ "$arg_fix" == "1" ]
+	then
+		log "updating git email to be '$gh_email' ..."
+		git config --global user.email "$gh_email"
+		local code_dir_username
+		code_dir_username="$(basename "$(get_code_user_dir)")"
+		local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
+		if [ -d "$challenges_dir" ]
+		then
+			cd "$challenges_dir" || return
+			git commit --allow-empty -m "New commit with fixed email"
+			git push origin master
+		fi
+	else
+		warn ""
+		warn "         try running these commands to fix it:"
+		warn ""
+		warn "         ${_color_WHITE}cd ~/code/*/fullstack-challenges"
+		warn "         ${_color_WHITE}git config --global user.email \"$gh_email\""
+		warn "         ${_color_WHITE}git commit --allow-empty -m \"New commit with fixed email\""
+		warn "         ${_color_WHITE}git push origin master"
+		warn ""
+		warn "         to fix it automatically"
+		warn "         run the doctor with the $_color_WHITE --fix $_color_yellow flag"
+	fi
 }
 
 function main() {
@@ -3192,9 +3176,8 @@ function main() {
 			check_github_org_invite_accept
 			check_web_gh_webhook
 		fi
-		check_git_and_github_email_match
 	fi
-	check_gh_email_public
+	check_gh_email_public_and_matching
 	check_zshrc_contents
 	check_zprofile_contents
 	check_c_compiler
