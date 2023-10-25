@@ -55,7 +55,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1698144713
+LAST_DOC_UPDATE=1698235366
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3096,9 +3096,19 @@ function check_gh_email_public_and_matching() {
 		return
 	fi
 	local git_email
-	git_email="$(git config --global user.email)"
+	if ! git_email="$(git config --global user.email)"
+	then
+		warn "Warning: failed to get git email"
+		warn "         this is likley an issue with the doctor it self"
+		warn "         please report it here"
+		warn ""
+		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
+		warn ""
+		return
+	fi
 	if [ "$gh_email" == "$git_email" ]
 	then
+		log "Found git email $_color_green$git_email"
 		return
 	fi
 	warn "Warning: your git email does not match your github one"
