@@ -692,7 +692,9 @@ function check_shell() {
 	then
 		return
 	fi
-	if [ ! -x "$(command -v getent)" ]
+
+	local default_shell
+	if [ -x "$(command -v getent)" ]
 	then
 		if [[ "$(getent passwd "$USER" | awk -F: '{print $NF}')" == "$(command -v zsh)" ]]
 		then
@@ -702,12 +704,46 @@ function check_shell() {
 			# so do not alert
 			return
 		fi
+	elif [ -x "$(command -v dscl)" ] && is_mac
+	then
+		# dscl . -read ~/ UserShell
+		# UserShell: /bin/zsh
+		if ! default_shell="$(dscl . -read ~/ UserShell | cut -d' ' -f2-)"
+		then
+			warn "Warning: failed to get default shell via dscl"
+			warn "         please report this issue here"
+			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+			return
+		fi
+		if [ "$default_shell" == "$(command -v zsh)" ]
+		then
+			return
+		fi
+	elif ! is_mac
+	then
+		if ! default_shell="$(grep "^$USER:" /etc/passwd | cut -d':' -f7)"
+		then
+			warn "Warning: failed to detect default shell from /etc/passwd"
+			warn "         please report this issue here"
+			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+			return
+		fi
+		if [ "$default_shell" == "" ]
+		then
+			warn "Warning: failed to detect default shell from /etc/passwd"
+			warn "         please report this issue here"
+			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+			return
+		fi
+		if [ "$default_shell" == "$(command -v zsh)" ]
+		then
+			return
+		fi
 	else
-		warn "Warning: failed to check shell because ${_color_red}getent${_color_yellow} is not found"
-		warn "         this is an issue with the doctor and you can ignore it"
-		# TODO: this fails on the github macOS CI
-		#       also /etc/passwd looks different on mac iirc
-		#       so this has to be properly checked with a mac user
+		warn "Warning: failed to detect default shell on your system"
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
 	fi
 
 	if [ "$arg_fix" == "0" ]
