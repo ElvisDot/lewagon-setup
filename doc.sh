@@ -42,6 +42,8 @@ bootcamp=unkown
 num_warnings=0
 num_errors=0
 
+g_github_ssh_username=''
+g_github_cli_username=''
 g_gh_auth_status=''
 
 MIN_DISK_SPACE_GB=10
@@ -55,7 +57,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1698235366
+LAST_DOC_UPDATE=1698310373
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -943,6 +945,61 @@ function detect_bootcamp() {
 	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
 }
 
+function get_gh_cli_username() {
+	# cached github username lookup
+	# based on gh cli authentication
+	# (may differ for github ssh see 'get_gh_ssh_username')
+	[[ -x "$(command -v gh)" ]] || return 1
+	[[ -x "$(command -v jq)" ]] || return 1
+
+	if [ "$g_github_cli_username" == null ]
+	then
+		return 1
+	fi
+	if ! g_github_cli_username="$(gh api user | jq -r .login)"
+	then
+		g_github_cli_username=null
+		return 1
+	fi
+	if [ "$g_github_cli_username" == "" ]
+	then
+		g_github_cli_username=null
+		return 1
+	fi
+	echo "$g_github_cli_username"
+	return 0
+}
+
+function get_gh_ssh_username() {
+	# cached github username lookup
+	# based on ssh authentication
+	# (may differ for gh cli see 'get_gh_cli_username')
+	if [ "$g_github_ssh_username" == null ]
+	then
+		return 1
+	fi
+	if [ "$g_github_ssh_username" != "" ]
+	then
+		echo "$g_github_ssh_username"
+		return 0
+	fi
+	if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
+	then
+		g_github_ssh_username="${BASH_REMATCH[1]}"
+	fi
+	if [ "$g_github_ssh_username" == "" ]
+	then
+		# this is a bit dirty to not check the gh name again
+		# if it failed once
+		# we assume here that the github user https://github.com/null
+		# does not run this script
+		g_github_ssh_username=null
+		return 1
+	fi
+	echo "$g_github_ssh_username"
+	return 0
+}
+
 function gh_auth_status() {
 	# cached auth status
 	# prints empty string and returns 1 if not authed
@@ -1341,10 +1398,9 @@ function run_dotfiles_install() {
 	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
 	then
 		dotfiles_dir="$(get_code_user_dir --no-dotfiles-needed)"
-		local github_username=''
-		if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
+		local github_username
+		if github_username="$(get_gh_ssh_username)"
 		then
-			github_username="${BASH_REMATCH[1]}"
 			dotfiles_dir="$HOME/code/$github_username"
 			if [ ! -d "$dotfiles_dir" ]
 			then
@@ -2069,12 +2125,8 @@ function check_github_name_matches() {
 	then
 		return 1
 	fi
-	local github_username=''
-	if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
-	then
-		github_username="${BASH_REMATCH[1]}"
-	fi
-	if [ "$github_username" == "" ]
+	local github_username
+	if ! github_username="$(get_gh_ssh_username)"
 	then
 		return 1
 	fi
@@ -2956,10 +3008,10 @@ function check_dotfiles_version() {
 
 	if ! git rev-parse -q --verify "$WANTED_DOTFILES_SHA^{commit}" > /dev/null
 	then
-		local github_username='yourusername'
-		if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
+		local github_username=''
+		if ! github_username="$(get_gh_ssh_username)"
 		then
-			github_username="${BASH_REMATCH[1]}"
+			github_username='yourusername'
 		fi
 		warn "Warning: seems like your dotfiles are outdated"
 		warn "         goto https://github.com/$github_username/dotfiles in your browser"
@@ -2978,17 +3030,24 @@ function check_web_gh_webhook() {
 	[[ -x "$(command -v jq)" ]] || return
 
 	local github_username
-	if ! github_username="$(gh api user | jq -r .login)"
+	if ! github_username="$(get_gh_cli_username)"
 	then
-		error "Error: failed get get github name from gh cli"
+		error "Error: failed to get github username from gh cli"
+		error "       please run the following command to authenticate"
+		error "       on github"
+		error ""
+		error "         ${_color_WHITE}gh auth login -s 'user:email' -w"
+		error ""
 		return
 	fi
+
 	if [ "$github_username" == "" ]
 	then
 		error "Error: github name is empty. This is probably a bug of the doctor."
 		error "       please report this issue here"
 		error ""
 		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		return
 	fi
 	local hooks_json
 	if ! hooks_json="$(gh api "repos/$github_username/fullstack-challenges/hooks" 2> /dev/null)"
