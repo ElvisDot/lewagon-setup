@@ -2119,27 +2119,37 @@ function check_github_name_matches() {
 	#
 	# this might not break the setup but
 	# is a good indicator something is weird
+
+	local github_ssh_username
+	if ! github_ssh_username="$(get_gh_ssh_username)"
+	then
+		return 1
+	fi
+	dbg "Found github ssh name $_color_green$github_ssh_username"
+
+	local github_cli_username
+	if github_cli_username="$(get_gh_cli_username)"
+	then
+		dbg "Found github cli name $_color_green$github_cli_username"
+		if [ "$github_cli_username" != "$github_ssh_username" ]
+		then
+			warn "Warning: there are two github usernames found"
+			warn "         one authed via ssh: $_color_RED$github_ssh_username"
+			warn "         one authed via cli: $_color_RED$github_cli_username"
+		fi
+	fi
+
 	local code_dir_username
 	code_dir_username="$(basename "$(get_code_user_dir)")"
 	if [ "$code_dir_username" == "" ]
 	then
 		return 1
 	fi
-	local github_username
-	if ! github_username="$(get_gh_ssh_username)"
-	then
-		return 1
-	fi
-	# could also check if ssh and gh cli use the same name
-	# gh api user | jq -r .login
-	# but should differ rarely and slows down the doctor
-	# so it might not be worth it
-	log "Found github name $_color_green$github_username"
-	if [ "$github_username" != "$code_dir_username" ]
+	if [ "$github_ssh_username" != "$code_dir_username" ]
 	then
 		warn "Warning: there are two usernames found"
 		warn "         one in your ~/code dir: $_color_RED$code_dir_username"
-		warn "         one  authed on  github: $_color_RED$github_username"
+		warn "         one  authed on  github: $_color_RED$github_ssh_username"
 		return 0
 	fi
 	return 1
