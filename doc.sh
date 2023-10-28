@@ -2855,6 +2855,199 @@ function check_rails_version() {
 	warn ""
 }
 
+function cd_into_fullstack_challenges() {
+	local git_repos
+	local code_dir_username
+	code_dir_username="$(basename "$(get_code_user_dir)")"
+	[[ "$code_dir_username" != "" ]] || return 1
+	local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
+	[[ -d "$challenges_dir" ]] || return 1
+	cd "$challenges_dir" || return 1
+
+	return 0
+}
+
+function check_git_remote_in_fullstack_challenges() {
+	# le wagon setup requires two remotes
+	# on for the students fork
+	# and one upstream remote to get updates from le wagon
+	cd_into_fullstack_challenges || return
+
+	dbg "checking challenges git remote ..."
+	dbg "located fullstack challenges at: $_color_green$PWD$_color_RESET"
+	local git_remote
+	if ! git_remote="$(git remote -v)"
+	then
+		warn "Warning: failed to get git remote in fullstack challenges"
+		warn ""
+		warn "         ${_color_WHITE}cd $PWD && git remote -v"
+		warn ""
+		return
+	fi
+	local github_username
+	if ! github_username="$(get_gh_ssh_username)"
+	then
+		github_username='STUDENT_GITHUB_NAME'
+	fi
+	if [ "$git_remote" == "" ]
+	then
+		warn "Warning: there are no git remotes in $PWD"
+		warn "         you can set them with the following command"
+		warn ""
+		warn "  ${_color_WHITE}cd $PWD"
+		warn "  ${_color_WHITE}git remote add origin git@github.com:$github_username/fullstack-challenges.git"
+		warn "  ${_color_WHITE}git remote add upstream git@github.com:lewagon/fullstack-challenges.git"
+		warn ""
+	fi
+
+	# origin remote
+
+	local remote_origin
+	if remote_origin="$(echo "$git_remote" | grep -E '^origin[[:space:]]')"
+	then
+		local origin_issue=0
+		if ! echo "$remote_origin" | grep -Eq '^origin[[:space:]]+git@'
+		then
+			warn "Warning: the challenges origin remote is not using ssh"
+			origin_issue=1
+		fi
+		if ! echo "$remote_origin" | grep -Eq '^origin[[:space:]]+.*github.com'
+		then
+			warn "Warning: the challenges origin remote is not pointing to github.com"
+			origin_issue=1
+		fi
+		if ! echo "$remote_origin" | grep -Eq '^origin[[:space:]]+.*/fullstack\-challenges'
+		then
+			warn "Warning: the challenges origin remote is not containing ${_color_WHITE}fullstack-challenges"
+			warn "         is there a typo in the repository name?"
+			warn "         did the student rename the fullstack challenges repository?"
+			origin_issue=1
+		fi
+		if echo "$remote_origin" | grep -Eq '^origin[[:space:]]+.*[:/]lewagon/'
+		then
+			warn "Warning: the challenges origin remote is pointing to lewagon"
+			warn "         it should point to the students fork instead"
+			origin_issue=1
+		fi
+		if [ "$github_username" != "STUDENT_GITHUB_NAME" ]
+		then
+			if ! echo "$remote_origin" | grep -Eq "^origin[[:space:]]+.*[:/]$github_username/"
+			then
+				warn "Warning: the challenges origin remote does not include the assumed github name"
+				warn "         expected to see $_color_green$github_username$_color_yellow"
+				origin_issue=1
+			fi
+		fi
+		if [ "$origin_issue" == "1" ]
+		then
+			if [ "$arg_fix" == "1" ]
+			then
+				log "Fixing fullstack challenges origin remote"
+				git remote set-url origin "git@github.com:$github_username/fullstack-challenges.git"
+			else
+				warn "         your origin remotes look like this:"
+				warn ""
+				local line
+				while read -r line
+				do
+					warn "         $_color_RED$line"
+				done < <(echo "$remote_origin")
+				warn ""
+				warn "         to fix your origin remote run the following command:"
+				warn ""
+				warn "  ${_color_WHITE}cd $PWD"
+				warn "  ${_color_WHITE}git remote set-url origin git@github.com:$github_username/fullstack-challenges.git"
+				warn ""
+				warn "         or run the doctor with $_color_WHITE--fix"
+				warn ""
+			fi
+		fi
+	else
+		if [ "$arg_fix" == "1" ]
+		then
+			log "Adding fullstack challenges origin remote"
+			git remote add origin "git@github.com:$github_username/fullstack-challenges.git"
+		else
+			warn "Warning: there is no ${_color_WHITE}origin$_color_yellow remote in $_color_WHITE$PWD"
+			warn "         you can add it with the following command:"
+			warn ""
+			warn "  ${_color_WHITE}cd $PWD"
+			warn "  ${_color_WHITE}git remote add origin git@github.com:$github_username/fullstack-challenges.git"
+			warn ""
+			warn "         or run the doctor with $_color_WHITE--fix"
+			warn ""
+		fi
+	fi
+
+	# upstream remote
+
+	local remote_upstream
+	if remote_upstream="$(echo "$git_remote" | grep -E '^upstream[[:space:]]')"
+	then
+		local upstream_issue=0
+		if ! echo "$remote_upstream" | grep -Eq '^upstream[[:space:]]+git@'
+		then
+			warn "Warning: the challenges upstream remote is not using ssh"
+			upstream_issue=1
+		fi
+		if ! echo "$remote_upstream" | grep -Eq '^upstream[[:space:]]+.*github.com'
+		then
+			warn "Warning: the challenges upstream remote is not pointing to github.com"
+			upstream_issue=1
+		fi
+		if ! echo "$remote_upstream" | grep -Eq '^upstream[[:space:]]+.*/fullstack\-challenges'
+		then
+			warn "Warning: the challenges upstream remote is not containing ${_color_WHITE}fullstack-challenges"
+			warn "         is there a typo in the repository name?"
+			upstream_issue=1
+		fi
+		if ! echo "$remote_upstream" | grep -Eq '^upstream[[:space:]]+.*[:/]lewagon/'
+		then
+			warn "Warning: the challenges upstream remote is not pointing to lewagon"
+			upstream_issue=1
+		fi
+		if [ "$upstream_issue" == "1" ]
+		then
+			if [ "$arg_fix" == "1" ]
+			then
+				log "Fixing fullstack challenges upstream remote"
+				git remote set-url upstream git@github.com:lewagon/fullstack-challenges.git
+			else
+				warn "         your upstream remotes look like this:"
+				warn ""
+				local line
+				while read -r line
+				do
+					warn "         $_color_RED$line"
+				done < <(echo "$remote_upstream")
+				warn ""
+				warn "         to fix your upstream remote run the following command:"
+				warn ""
+				warn "  ${_color_WHITE}cd $PWD"
+				warn "  ${_color_WHITE}git remote set-url upstream git@github.com:lewagon/fullstack-challenges.git"
+				warn ""
+				warn "         or run the doctor with $_color_WHITE--fix"
+				warn ""
+			fi
+		fi
+	else
+		if [ "$arg_fix" == "1" ]
+		then
+			log "Adding fullstack challenges upstream remote"
+			git remote add upstream git@github.com:lewagon/fullstack-challenges.git
+		else
+			warn "Warning: there is no ${_color_WHITE}upstream$_color_yellow remote in $_color_WHITE$PWD"
+			warn "         you can add it with the following command:"
+			warn ""
+			warn "  ${_color_WHITE}cd $PWD"
+			warn "  ${_color_WHITE}git remote add upstream git@github.com:lewagon/fullstack-challenges.git"
+			warn ""
+			warn "         or run the doctor with $_color_WHITE--fix"
+			warn ""
+		fi
+	fi
+}
+
 function check_git_init_in_fullstack_challenges() {
 	# if a student types `git init`
 	# in the challenges folder
@@ -2862,12 +3055,7 @@ function check_git_init_in_fullstack_challenges() {
 	# it overwrites the outer git folder
 	# and breaks commands such as `git pull`
 	# and `git push` because the remotes are gone
-	local git_repos
-	local code_dir_username
-	code_dir_username="$(basename "$(get_code_user_dir)")"
-	local challenges_dir="$HOME/code/$code_dir_username/fullstack-challenges"
-	[[ -d "$challenges_dir" ]] || return
-	cd "$challenges_dir" || return
+	cd_into_fullstack_challenges || return
 
 	if ! git_repos="$(find . -type d -name .git)"
 	then
@@ -3367,6 +3555,7 @@ function main() {
 		check_database
 		check_ready_commit_email
 		check_git_init_in_fullstack_challenges
+		check_git_remote_in_fullstack_challenges
 		check_rubygems
 	elif is_data
 	then
