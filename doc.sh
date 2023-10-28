@@ -2319,14 +2319,18 @@ function assert_num_file_lines() {
 function assert_num_dupe_lines() {
 	local filename="$1"
 	local max_dupes="$2"
+	local num_dupes=0
 	[[ -f "$filename" ]] || return
 
-	# TODO: find portable `uniq -D` for mac
-	#       https://github.com/ElvisDot/lewagon-setup/issues/4
-	is_mac && return
-
-	local num_dupes
-	num_dupes="$(sort "$filename" | uniq -D | awk NF | wc -l)"
+	if uniq --help 2>&1 | grep -q -- '-D'
+	then
+		num_dupes="$(sort "$filename" | uniq -D | awk NF | wc -l)"
+	else
+		while IFS=$' \t\n' read -r dupe_count
+		do
+			num_dupes="$((num_dupes + dupe_count))"
+		done < <(awk NF "$filename" | sort | uniq -c | grep -o '^[[:space:]]*[2-9][0-9]*')
+	fi
 	if [ "$num_dupes" -gt "$max_dupes" ]
 	then
 		warn "Warning: there are $_color_RED$num_dupes$_color_yellow duplicated lines in"
