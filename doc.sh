@@ -1048,7 +1048,15 @@ function get_gh_ssh_username() {
 		echo "$g_github_ssh_username"
 		return 0
 	fi
-	g_github_ssh_username="$( (ssh -T git@github.com 2>&1) | cut -d' ' -f2 | cut -d'!' -f1 )"
+	local ssh_t_github
+	if ! ssh_t_github="$(ssh -T git@github.com 2>&1)"
+	then
+		warn "Warning: failed to get github username" 1>&2
+		warn "         $_color_red$ssh_t_github" 1>&2
+		g_github_ssh_username=null
+		return 1
+	fi
+	g_github_ssh_username="$(echo "$ssh_t_github" | cut -d' ' -f2 | cut -d'!' -f1)"
 	# the regex is the nicer solution but the capture group causes a
 	# syntax issue on bash 3
 	# if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
