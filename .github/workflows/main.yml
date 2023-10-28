@@ -41,7 +41,7 @@ jobs:
         run: GITHUB_CI=1 ./doc.sh --full -vvv
 
       - name: '[bash 3] Run the doctor (full/verbose)'
-        run: ~/bash3 GITHUB_CI=1 ./doc.sh --full -vvv
+        run: GITHUB_CI=1 ~/bash3 ./doc.sh --full -vvv
 
       - name: Check doctor age
         run: ./scripts/doc_age.sh || { echo "Update LAST_DOC_UPDATE variable or run ./scripts/update.sh"; exit 1; }
