@@ -19,6 +19,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y shellcheck
           wget https://github.com/ElvisDot/lewagon-setup/releases/download/v1.0.0/bash3 -O ~/bash3
+          chmod +x ~/bash3
           mkdir -p ~/.config/gh
           echo "user: fakeuser" >> ~/.config/gh/hosts.yml
           mkdir -p ~/code/fakeuser
