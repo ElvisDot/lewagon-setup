@@ -1003,6 +1003,10 @@ function detect_bootcamp() {
 	then
 		bootcamp=web
 	fi
+	if cd_into_fullstack_challenges
+	then
+		bootcamp=web
+	fi
 	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
 }
 
