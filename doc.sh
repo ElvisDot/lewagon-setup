@@ -1049,7 +1049,8 @@ function get_gh_ssh_username() {
 		return 0
 	fi
 	local ssh_t_github
-	if ! ssh_t_github="$(ssh -T git@github.com 2>&1)"
+	ssh_t_github="$(ssh -T git@github.com 2>&1)"
+	if [ "$?" != "1" ]
 	then
 		warn "Warning: failed to get github username" 1>&2
 		warn "         $_color_red$ssh_t_github" 1>&2
