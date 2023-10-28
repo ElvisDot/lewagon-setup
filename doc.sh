@@ -1669,6 +1669,7 @@ function check_docker_installed() {
 		warn "         install docker desktop on your windows host"
 		warn "         following these instructions https://docs.docker.com/desktop/wsl/"
 	elif is_mac
+	then
 		warn "         get it from here https://docs.docker.com/desktop/install/mac-install/"
 	else
 		warn "         get it from here https://docs.docker.com/get-docker/"
