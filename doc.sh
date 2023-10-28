@@ -1044,10 +1044,13 @@ function get_gh_ssh_username() {
 		echo "$g_github_ssh_username"
 		return 0
 	fi
-	if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
-	then
-		g_github_ssh_username="${BASH_REMATCH[1]}"
-	fi
+	g_github_ssh_username="$( (ssh -T git@github.com 2>&1) | cut -d' ' -f2 | cut -d'!' -f1 )"
+	# the regex is the nicer solution but the capture group causes a
+	# syntax issue on bash 3
+	# if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
+	# then
+	# 	g_github_ssh_username="${BASH_REMATCH[1]}"
+	# fi
 	if [ "$g_github_ssh_username" == "" ]
 	then
 		# this is a bit dirty to not check the gh name again
@@ -1184,7 +1187,9 @@ function is_outdated_ruby() {
 	local ruby_vers
 	ruby_vers="$(ruby -e "puts RUBY_VERSION" 2>/dev/null)"
 
-	if ! [[ "$ruby_vers" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]
+	# does not work in bash 3
+	# if ! [[ "$ruby_vers" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]
+	if ! echo "$ruby_vers" | grep -qE '^([0-9]+)\.([0-9+])\.([0-9]+)'
 	then
 		warn "Warning: failed to parse ruby version '$ruby_vers'"
 		# if we do not detect semver we count it as outdated
@@ -2708,10 +2713,13 @@ function check_disk_space() {
 	if [[ "$avail" =~ ^[0-9]+M$ ]] || [[ "$avail" =~ ^[0-9]+K$ ]]
 	then
 		warn "Warning: detected too little free disk space $avail"
-	elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
+	# does not work in bash 3
+	# elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
+	elif echo "$avail" | grep -Eq '^([0-9]+)Gi?$'
 	then
 		local avail_gb
-		avail_gb="${BASH_REMATCH[1]}"
+		# avail_gb="${BASH_REMATCH[1]}"
+		avail_gb="$(echo "$avail" | grep -Eo '^([0-9]+)Gi?$' | cut -d'G' -f1)"
 		if [ "$avail_gb" -lt "$MIN_DISK_SPACE_GB" ]
 		then
 			warn "Warning: you only seem to have $avail_gb GB free disk space"
@@ -2787,7 +2795,9 @@ function check_rails_version() {
 	then
 		return
 	fi
-	if ! [[ "$(rails -v)" =~ Rails\ ([0-9])\..* ]]
+	# does not work in bash 3
+	# if ! [[ "$(rails -v)" =~ Rails\ ([0-9])\..* ]]
+	if ! rails -v | grep -Eq 'Rails\ ([0-9])\..*'
 	then
 		warn "Warning: failed to parse rails version"
 		warn ""
