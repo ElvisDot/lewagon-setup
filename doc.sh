@@ -298,22 +298,6 @@ function dbg() {
 	printf '%b[*]%b %b\n' "$_color_WHITE" "$_color_RESET" "$1"
 }
 
-function check_ssl() {
-	local host
-	local hosts=(https://github.com https://lewagon.com https://google.com)
-	for host in "${hosts[@]}"
-	do
-		if [ -x "$(command -v curl)" ]
-		then
-			curl "$host" &>/dev/null && return
-		elif [ -x "$(command -v wget)" ]
-		then
-			wget "$host" &>/dev/null && return
-		fi
-	done
-	warn "Warning: Could not establish SSL connection!"
-}
-
 function check_http() {
 	if [ -x "$(command -v curl)" ]
 	then
@@ -323,6 +307,22 @@ function check_http() {
 		wget --timeout 10 --tries 1 "$host" &>/dev/null && return 0
 	fi
 	return 1
+}
+
+function check_ssl() {
+	local host
+	local hosts=(https://github.com https://lewagon.com https://google.com)
+	for host in "${hosts[@]}"
+	do
+		log -n "testing https connection to $_color_WHITE$host$_color_RESET"
+		if check_http "$host"
+		then
+			echo -e "$_color_GREEN\tOK"
+		else
+			echo -e "$_color_RED\tFAILED"
+		fi
+	done
+	warn "Warning: Could not establish SSL connection!"
 }
 
 function fail_if_no_internet() {
