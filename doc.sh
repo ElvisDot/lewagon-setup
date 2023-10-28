@@ -279,7 +279,13 @@ function warn() {
 }
 
 function log() {
-	printf '%b[*]%b %b\n' "$_color_WHITE" "$_color_RESET" "$1"
+	local newline='\n'
+	if [ "$1" == "-n" ]
+	then
+		newline=''
+		shift
+	fi
+	printf '%b[*]%b %b%b' "$_color_WHITE" "$_color_RESET" "$1" "$newline"
 }
 
 function okay() {
@@ -308,6 +314,17 @@ function check_ssl() {
 	warn "Warning: Could not establish SSL connection!"
 }
 
+function check_http() {
+	if [ -x "$(command -v curl)" ]
+	then
+		curl --max-time 10 "$host" &>/dev/null && return 0
+	elif [ -x "$(command -v wget)" ]
+	then
+		wget --timeout 10 --tries 1 "$host" &>/dev/null && return 0
+	fi
+	return 1
+}
+
 function fail_if_no_internet() {
 	local ip
 	# Even the stable LeWagon munich office had a hiccup for 8.8.8.8
@@ -325,18 +342,26 @@ function fail_if_no_internet() {
 	# So do a http fallback test before concluding the internet is down
 	local host
 	local hosts=(http://github.com http://lewagon.com http://google.com)
+	local is_fatal=0
 	for host in "${hosts[@]}"
 	do
-		if [ -x "$(command -v curl)" ]
+		log -n "testing http connection to $_color_WHITE$host$_color_RESET"
+		if check_http "$host"
 		then
-			curl "$host" &>/dev/null && return
-		elif [ -x "$(command -v wget)" ]
-		then
-			wget "$host" &>/dev/null && return
+			echo -e "$_color_GREEN\tOK"
+		else
+			echo -e "$_color_RED\tFAILED"
+			[[ "$host" == "http://github.com" ]] && is_fatal=1
 		fi
 	done
-	error "Error: could not ping 8.8.8.8 is your internet working?"
-	exit 1
+	# google and lewagon can fail
+	# but the doctor script depends on connectivity to github
+	if [ "$is_fatal" == "1" ]
+	then
+		error "Error: could not ping 8.8.8.8 or do a http request to github.com"
+		error "       is your internet working?"
+		exit 1
+	fi
 }
 
 function check_dns() {
