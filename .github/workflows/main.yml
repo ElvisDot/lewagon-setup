@@ -27,7 +27,7 @@ jobs:
       - name: Run the doctor
         run: ./doc.sh
 
-      - name: [bash 3] Run the doctor
+      - name: '[bash 3] Run the doctor'
         run: ~/bash3 ./doc.sh
 
       # - name: Run the doctor (curl web)
@@ -39,7 +39,7 @@ jobs:
       - name: Run the doctor (full/verbose)
         run: GITHUB_CI=1 ./doc.sh --full -vvv
 
-      - name: [bash 3] Run the doctor (full/verbose)
+      - name: '[bash 3] Run the doctor (full/verbose)'
         run: ~/bash3 GITHUB_CI=1 ./doc.sh --full -vvv
 
       - name: Check doctor age
