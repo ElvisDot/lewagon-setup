@@ -1664,13 +1664,16 @@ function check_docker_installed() {
 	fi
 	warn "Warning: docker is not installed"
 	warn ""
-	warn "         get it from here https://docs.docker.com/get-docker/"
-	warn ""
 	if is_windows
 	then
-		warn "         make sure to install it on your ${_color_GREEN}Linux$_color_yellow subsystem"
-		warn "         not on your ${_color_RED}Windows$_color_yellow host system"
+		warn "         install docker desktop on your windows host"
+		warn "         following these instructions https://docs.docker.com/desktop/wsl/"
+	elif is_mac
+		warn "         get it from here https://docs.docker.com/desktop/install/mac-install/"
+	else
+		warn "         get it from here https://docs.docker.com/get-docker/"
 	fi
+	warn ""
 }
 
 function check_docker_running() {
