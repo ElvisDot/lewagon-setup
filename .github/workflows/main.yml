@@ -79,7 +79,7 @@ jobs:
 
       - name: Doctor should be non interactive
         run: |
-          if grep -v "while.*read" doc.sh | grep -nE '^[^#]*(;|^| )*read($|;| )';
+          if grep -v "while.*read" doc.sh | grep -nE '^[^#]*(;|^|[[:space:]])+read($|;| )';
           then
             echo "Error: found use of read keyword. The doctor should be non interactive";
             exit 1
