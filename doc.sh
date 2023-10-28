@@ -285,17 +285,17 @@ function log() {
 		newline=''
 		shift
 	fi
-	printf '%b[*]%b %b%b' "$_color_WHITE" "$_color_RESET" "$1" "$newline"
+	printf '%b[*]%b %b%b%b' "$_color_WHITE" "$_color_RESET" "$1" "$_color_RESET" "$newline"
 }
 
 function okay() {
-	printf '%b[%b+%b]%b %b\n' "$_color_WHITE" "$_color_GREEN" "$_color_WHITE" "$_color_RESET" "$1"
+	printf '%b[%b+%b]%b %b%b\n' "$_color_WHITE" "$_color_GREEN" "$_color_WHITE" "$_color_RESET" "$1" "$_color_RESET"
 }
 
 function dbg() {
 	[ "$arg_verbose" -gt "0" ] || return
 
-	printf '%b[*]%b %b\n' "$_color_WHITE" "$_color_RESET" "$1"
+	printf '%b[*]%b %b%b\n' "$_color_WHITE" "$_color_RESET" "$1" "$_color_RESET"
 }
 
 function check_http() {
