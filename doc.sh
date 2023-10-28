@@ -57,7 +57,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1698310373
+LAST_DOC_UPDATE=1698491802
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
