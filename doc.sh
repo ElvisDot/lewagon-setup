@@ -779,6 +779,7 @@ function check_shell() {
 		warn "           ${_color_WHITE}chsh -s \"\$(command -v zsh)\""
 		warn ""
 		warn "         or run the doctor with $_color_WHITE--fix"
+		warn ""
 	else
 		if [ -x "$(command -v zsh)" ]
 		then
@@ -860,6 +861,7 @@ function fix_dns_wsl() {
 	error "       ${_color_WHITE}sudo chattr +i /etc/resolv.conf"
 	error ""
 	error "       or run the doctor with $_color_WHITE--fix"
+	error ""
 }
 
 function check_basics() {
@@ -1153,12 +1155,13 @@ function install_rbenv() {
 			warn "         ${_color_WHITE}rm -rf ~/.rvm"
 			warn ""
 			warn "         or run the doctor with $_color_WHITE--fix"
+			warn ""
 		fi
 	fi
 
 	if [ "$arg_fix" == "0" ]
 	then
-		warn "Warning: please install rbenv or run the doctor with --fix"
+		warn "Warning: please install rbenv or run the doctor with $_color_WHITE--fix"
 		return
 	fi
 	if [ "$arg_course" != "web" ]
@@ -3048,6 +3051,7 @@ function check_rubygems() {
 			error "         ${_color_WHITE}echo \":ipv4_fallback_enabled: true\" >> ~/.gemrc"
 			error ""
 			error "       or run the doctor with $_color_WHITE--fix"
+			error ""
 		fi
 	fi
 }
