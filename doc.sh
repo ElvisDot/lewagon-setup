@@ -57,7 +57,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1698927098
+LAST_DOC_UPDATE=1698937556
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2887,6 +2887,57 @@ function cd_into_fullstack_challenges() {
 	return 0
 }
 
+function check_git_branch_in_fullstack_challenges() {
+	cd_into_fullstack_challenges || return
+	[[ -d .git ]] || return
+
+	local branch
+	if ! branch="$(git rev-parse --abbrev-ref HEAD)"
+	then
+		warn "Warning: failed to get fullstack challenges branch"
+		warn "         this is probably an issue with the doctor"
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+	if [ "$branch" == "" ]
+	then
+		warn "Warning: the fullstack-challenges branch is empty"
+		warn "         this is super weird and should not happen"
+		warn "         maybe it is a bug with the doctor"
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+
+	if [ "$branch" != "master" ]
+	then
+		warn "Warning: the active git branch in the challenges repo is not master"
+		warn ""
+		warn "         found:    ${_color_RED}$branch"
+		warn "         expected: ${_color_green}master"
+		warn ""
+		if [ "$arg_fix" == "1" ]
+		then
+			if ! git checkout master
+			then
+				warn "Warning: failed to fix active fullstack challenges branch"
+				warn "         please run the following command and check for errors"
+				warn " "
+				warn "  ${_color_WHITE}cd $PWD"
+				warn "  ${_color_WHITE}git checkout master"
+				warn ""
+			fi
+		else
+			warn "  ${_color_WHITE}cd $PWD"
+			warn "  ${_color_WHITE}git checkout master"
+			warn ""
+			warn "         or run the doctor with $_color_WHITE--fix"
+			warn ""
+		fi
+	fi
+}
+
 function check_git_remote_in_fullstack_challenges() {
 	# le wagon setup requires two remotes
 	# on for the students fork
@@ -3576,6 +3627,7 @@ function main() {
 		check_ready_commit_email
 		check_git_init_in_fullstack_challenges
 		check_git_remote_in_fullstack_challenges
+		check_git_branch_in_fullstack_challenges
 		check_rubygems
 	elif is_data
 	then
