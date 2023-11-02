@@ -3119,6 +3119,13 @@ function check_git_remote_in_fullstack_challenges() {
 	fi
 }
 
+function is_wanted_git_repo() {
+	local git_repo="$1"
+	[[ "$git_repo" == './.git' ]] && return 0
+	[[ "$git_repo" == *05-Push-on-Github-Pages* ]] && return 0
+	return 1
+}
+
 function check_git_init_in_fullstack_challenges() {
 	# if a student types `git init`
 	# in the challenges folder
@@ -3136,17 +3143,23 @@ function check_git_init_in_fullstack_challenges() {
 		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 		return
 	fi
-	if [ "$git_repos" == "./.git" ]
-	then
-		# all good
-		return
-	fi
 
 	if [ ! -d ./.git ]
 	then
 		warn "Warning: missing git folder in fullstack-challenges folder"
 		warn "         $(pwd)"
 	fi
+	local all_good=1
+	while IFS= read -r -d '' git_repo
+	do
+		if ! is_wanted_git_repo "$git_repo"
+		then
+			all_good=0
+			break
+		fi
+	done < <(find . -type d -name .git -print0)
+
+	[[ "$all_good" == "1" ]] && return
 
 	if [ "$git_repos" != "" ]
 	then
@@ -3160,7 +3173,7 @@ function check_git_init_in_fullstack_challenges() {
 		local git_repo
 		while IFS= read -r -d '' git_repo
 		do
-			[[ "$git_repo" == './.git' ]] && continue
+			is_wanted_git_repo "$git_repo" && continue
 
 			warn "           $_color_RED$git_repo$_color_RESET"
 		done < <(find . -type d -name .git -print0)
@@ -3171,7 +3184,7 @@ function check_git_init_in_fullstack_challenges() {
 		warn ""
 		while IFS= read -r -d '' git_repo
 		do
-			[[ "$git_repo" == './.git' ]] && continue
+			is_wanted_git_repo "$git_repo" && continue
 
 			local full_path_git_repo
 			# readlink -f can fail
