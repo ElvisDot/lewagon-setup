@@ -57,7 +57,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1698491802
+LAST_DOC_UPDATE=1698927098
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2824,7 +2824,27 @@ function check_rails_version() {
 		return
 	fi
 	local major_rails_version
-	major_rails_version="${BASH_REMATCH[1]}"
+	# major_rails_version="${BASH_REMATCH[1]}"
+	if ! major_rails_version="$(rails -v | grep -Eo 'Rails\ [0-9]\.' | cut -d' ' -f2 | cut -d'.' -f1)"
+	then
+		warn "Warning: failed to extract major rails version"
+		warn ""
+		warn "         $_color_YELLOW$(rails -v)"
+		warn ""
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+	if [ "$major_rails_version" == "" ]
+	then
+		warn "Warning: extracted empty major rails version"
+		warn ""
+		warn "         $_color_YELLOW$(rails -v)"
+		warn ""
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
 	if [ "$major_rails_version" -ge "$WANTED_RAILS_MAJOR_VERSION" ]
 	then
 		return
