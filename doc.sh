@@ -57,10 +57,11 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1698937556
+LAST_DOC_UPDATE=1699013009
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
+is_vscode_healthy=0
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
 then
@@ -886,11 +887,7 @@ function check_basics() {
 	fi
 }
 
-function check_vscode() {
-	if [ -x "$(command -v code)" ]
-	then
-		return
-	fi
+function check_vscode_location() {
 	local vs_path="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
 	if [ -f "$vs_path"/code ]
 	then
@@ -944,6 +941,43 @@ function check_vscode() {
 	fi
 }
 
+function check_vscode() {
+	dbg "checking vscode ..."
+	is_vscode_healthy=0
+	if [ -x "$(command -v code)" ]
+	then
+		return
+	fi
+	check_vscode_location
+	if is_windows
+	then
+		if [ ! -d ~/.vscode-server ]
+		then
+			warn "Warning: did not find ~/.vscode-server"
+			warn "         if you did not install vscode yet"
+			warn "         or your ${_color_WHITE}code$_color_yellow command works fine"
+			warn "         you can ignore this warning"
+		fi
+	fi
+	local vscode_version
+	if ! vscode_version="$(code --version)"
+	then
+		warn "Warning: failed to get vscode version"
+		warn "         you can try reinstalling and or deleting your vscode-server"
+		warn "         directory by running the following command:"
+		warn ""
+		warn "  ${_color_WHITE}rm -rf ~/.vscode-server"
+		warn ""
+		return
+	fi
+	if [ "$vscode_version" == "" ]
+	then
+		warn "Warning: ${_color_WHITE}code --version$_color_yellow output is empty"
+		return
+	fi
+	is_vscode_healthy=1
+}
+
 # the doctor would not work at all if the PATH
 # is that broken
 function check_path_overwritten() {
@@ -987,7 +1021,7 @@ function detect_bootcamp() {
 	then
 		bootcamp=data
 	fi
-	if [ -x "$(command -v code)" ]
+	if [ -x "$(command -v code)" ] && [ "$is_vscode_healthy" == "1" ]
 	then
 		if code --list-extensions | grep -q ruby
 		then
@@ -3592,9 +3626,9 @@ function main() {
 	then
 		check_windows_anti_virus
 	fi
+	check_vscode
 	detect_bootcamp
 	# check_path_overwritten
-	check_vscode
 	check_package_manager_programs
 	check_gh_cli
 	check_github_access
