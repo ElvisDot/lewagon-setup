@@ -2573,8 +2573,14 @@ function check_pyenv_in_zprofile() {
 	then
 		return
 	fi
-	warn "Warning: missing pyenv init in ~/.zprofile"
 
+	# le wagon setup puts the pyenv init in the ~/.zprofile
+	# but we should not alert if it moved to ~/.zshrc
+	# since that also works just fine
+	if ! grep -q '^[[:space:]]*type -a pyenv' ~/.zshrc
+	then
+		warn "Warning: missing pyenv init in ~/.zprofile"
+	fi
 }
 
 function check_zprofile_contents() {
