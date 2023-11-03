@@ -2543,13 +2543,18 @@ function check_zshrc_contents() {
 		warn "Warning: .aliases not loaded in your ~/.zshrc"
 	fi
 
-	if ! grep -q '[^#]EDITOR=' ~/.zshrc
+	if ! grep -Eq '^[[:space:]]*export EDITOR=' ~/.zshrc
 	then
-		warn "Warning: the EDITOR variable is not set in your ~/.zshrc"
-	elif ! grep -q '[^#]EDITOR=code' ~/.zshrc
+		if ! grep -q '[^#]EDITOR=' ~/.zshrc
+		then
+			warn "Warning: the EDITOR variable is not set in your ~/.zshrc"
+		else
+			warn "Warning: the EDITOR variable is set in your ~/.zshrc but not exported"
+		fi
+	elif ! grep -Eq '^[[:space:]]*export EDITOR=["'"'"']?code' ~/.zshrc
 	then
 		warn "Warning: your EDTIOR variable is not set to code in your ~/.zshrc"
-		grep -n '[^#]EDITOR=code' ~/.zshrc
+		grep -n '^[^#]*EDITOR=' ~/.zshrc
 	fi
 }
 
