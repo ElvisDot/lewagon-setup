@@ -31,3 +31,26 @@ WANTED_DOTFILES_SHA="$(grep '^WANTED_DOTFILES_SHA=' doc.sh | cut -d"'" -f2)"
 latest_dotfiles_sha="$(curl -s https://api.github.com/repos/lewagon/dotfiles/commits/master | jq -r .sha)"
 check_match dotfiles "$WANTED_DOTFILES_SHA" "$latest_dotfiles_sha"
 
+function check_readme() {
+	local ip
+	local found=0
+	while read -r ip
+	do
+		if grep 'raw.githubusercontent.com.*/etc/hosts' README.md | grep -qF "$ip"
+		then
+			found=1
+			break
+		fi
+	done < <(host raw.githubusercontent.com | grep -o 'address.*' | cut -d' ' -f2)
+
+	if [ "$found" == "0" ]
+	then
+		echo "Error: README.md does not contain correct ip"
+		grep 'raw.githubusercontent.com.*/etc/hosts' README.md
+		echo "Correct ips:"
+		host raw.githubusercontent.com
+		exit 1
+	fi
+}
+
+check_readme
