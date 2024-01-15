@@ -2125,14 +2125,24 @@ function check_postgres_health() {
 		# to avoid prompting for sudo password on healthy systems
 		return
 	fi
-	if ! sudo -u postgres psql -d postgres -c '\l' > /dev/null
+	if is_windows || is_linux
 	then
-		warn "Warning: failed to list postgres databases"
-		warn "         try running this command and check if there are any errors"
+		if ! sudo -u postgres psql -d postgres -c '\l' > /dev/null
+		then
+			warn "Warning: failed to list postgres databases"
+			warn "         try running this command and check if there are any errors"
+			warn ""
+			warn "         ${_color_WHITE}sudo -u postgres psql -d postgres -c '\\l' > /dev/null"
+			warn ""
+			return
+		fi
+	else
+		warn "Warning: your postgres is not healthy."
+		warn "         have a look at the following postgres warnings"
+		warn "         or look at the errors of this command:"
 		warn ""
-		warn "         ${_color_WHITE}sudo -u postgres psql -d postgres -c '\\l' > /dev/null"
+		warn "           ${_color_WHITE}psql -lqt -U \"$(whoami)"\"
 		warn ""
-		return
 	fi
 }
 
