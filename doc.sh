@@ -2165,7 +2165,7 @@ function check_postgres_health() {
 		# we cann login and list databases using our user
 		# assume everything is OK
 		# to avoid prompting for sudo password on healthy systems
-		return
+		return 0
 	fi
 	if is_windows || is_linux
 	then
@@ -2176,16 +2176,10 @@ function check_postgres_health() {
 			warn ""
 			warn "         ${_color_WHITE}sudo -u postgres psql -d postgres -c '\\l' > /dev/null"
 			warn ""
-			return
+			return 1
 		fi
-	else
-		warn "Warning: your postgres is not healthy."
-		warn "         have a look at the following postgres warnings"
-		warn "         or look at the errors of this command:"
-		warn ""
-		warn "           ${_color_WHITE}psql -lqt -U \"$(whoami)"\"
-		warn ""
 	fi
+	return 1
 }
 
 function check_postgres_role() {
@@ -2194,30 +2188,30 @@ function check_postgres_role() {
 		# we cann login and list databases using our user
 		# assume everything is OK
 		# to avoid prompting for sudo password on healthy systems
-		return
+		return 0
 	fi
 	if [ "$USER" == "root" ]
 	then
 		warn "Warning: can not check postgres role when running as root"
-		return
+		return 1
 	fi
 	local username
 	if ! username="$(id -u -n)"
 	then
 		warn "Warning: failed to check postgres role"
-		return
+		return 1
 	fi
 	if [ "$USER" != "$username" ] || [ "$USER" == "" ]
 	then
 		warn "Warning: failed to check postgres role USER='$USER' username='$username'"
-		return
+		return 1
 	fi
 	if [[ ! "$USER" =~ ^[a-z][-a-z0-9_]*$ ]]
 	then
 		warn "Warning: failed to check postgres role USER='$USER' (invalid name)"
 		warn "         please report this issue here"
 		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
-		return
+		return 1
 	fi
 	local postgres_roles
 	if is_windows || is_mac
@@ -2247,6 +2241,7 @@ function check_postgres_role() {
 		warn "Warning: your role might be missing but the doctor is not sure"
 		warn "         is anyone else using this device?"
 	fi
+	return 1
 }
 
 function check_postgres_create_db() {
@@ -2256,7 +2251,7 @@ function check_postgres_create_db() {
 		# 	this means either the student created a db with this name
 		# 	or the script failed to delete it
 		# 	either way its a edge case and the system is probably healthy
-		return
+		return 0
 	fi
 	if ! psql -U "$(whoami)" -d postgres -c 'CREATE DATABASE lewagon_doc_test_db_delete_me;' > /dev/null
 	then
@@ -2266,6 +2261,7 @@ function check_postgres_create_db() {
 	then
 		warn "Warning: failed to delete postgres database"
 	fi
+	return 1
 }
 
 function check_database() {
@@ -2278,9 +2274,15 @@ function check_database() {
 	else
 		check_postgres_running_linux
 	fi
-	check_postgres_health
-	check_postgres_role
-	check_postgres_create_db
+	if ! check_postgres_health || ! check_postgres_role || ! check_postgres_create_db
+	then
+		warn "Warning: your postgres is not healthy."
+		warn "         check the above warnings for more details."
+		warn "         or look at the errors of this command:"
+		warn ""
+		warn "           ${_color_WHITE}psql -lqt -U \"$(whoami)"\"
+		warn ""
+	fi
 }
 
 function check_sip_mac() {
