@@ -2023,13 +2023,22 @@ function check_postgres_running_mac() {
 		warn ""
 		# check if a non brew postgres is blocking the port
 		local blocked_port
-		if ! blocked_port="$(lsof -i -P | grep ":5432 (LISTEN)")"
+		local lsof_ip
+		if ! lsof_ip="$(lsof -i -P)"
 		then
 			warn "Warning: failed to check for blocked port"
+			warn "         try running this and check for errors"
+			warn ""
+			warn "         ${_color_WHITE}lsof -i -P"
+			warn ""
+			warn "         this is a bug of the doctor it self"
+			warn "         please report this issue here"
+			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 			return
 		fi
-		if [ "$blocked_port" == "" ]
+		if ! echo "$lsof_ip" | grep ":5432 (LISTEN)"
 		then
+			# port not blocked by someone else
 			return
 		fi
 		local blocking_pid
@@ -2178,7 +2187,7 @@ function check_postgres_role() {
 		return
 	fi
 	local postgres_roles
-	if is_windows || is_macos
+	if is_windows || is_mac
 	then
 		if ! postgres_roles="$(sudo -u postgres psql -d postgres -c "SELECT * FROM pg_roles WHERE rolname = '$USER';" 2>/dev/null)"
 		then
