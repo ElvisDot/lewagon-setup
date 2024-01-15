@@ -963,11 +963,14 @@ function check_vscode() {
 	if ! vscode_version="$(code --version)"
 	then
 		warn "Warning: failed to get vscode version"
-		warn "         you can try reinstalling and or deleting your vscode-server"
-		warn "         directory by running the following command:"
-		warn ""
-		warn "  ${_color_WHITE}rm -rf ~/.vscode-server"
-		warn ""
+		if is_windows
+		then
+			warn "         you can try reinstalling and or deleting your vscode-server"
+			warn "         directory by running the following command:"
+			warn ""
+			warn "  ${_color_WHITE}rm -rf ~/.vscode-server"
+			warn ""
+		fi
 		return
 	fi
 	if [ "$vscode_version" == "" ]
