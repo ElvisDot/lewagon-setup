@@ -6,5 +6,7 @@ set -euo pipefail
 
 echo "[OK] all versions up to date. Updating doctors age..."
 
-sed -i "s/^LAST_DOC_UPDATE=.*/LAST_DOC_UPDATE=$(date '+%s')/" doc.sh
+doc_code="$(cat doc.sh)"
+# shellcheck disable=SC2001
+echo "$doc_code" | sed "s/^LAST_DOC_UPDATE=.*/LAST_DOC_UPDATE=$(date '+%s')/" > doc.sh
 
