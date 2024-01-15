@@ -2282,6 +2282,16 @@ function show_postgres_logs_macos() {
 	done
 }
 
+function show_postgres_storage_macos() {
+	local dir
+	for dir in /usr/local/var/postgres*/ /opt/homebrew/var/postgres*/
+	do
+		[[ -d "$dir" ]] || continue
+
+		log "Found postgres folder: ${_color_GREEN}$dir"
+	done
+}
+
 function check_database() {
 	dbg "checking database ..."
 	# TODO: persist postgres start command on wsl in zshrc
@@ -2303,6 +2313,7 @@ function check_database() {
 		if is_mac
 		then
 			show_postgres_logs_macos
+			show_postgres_storage_macos
 		fi
 	fi
 }
