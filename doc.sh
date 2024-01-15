@@ -2861,7 +2861,29 @@ function check_rails_version() {
 	fi
 	# does not work in bash 3
 	# if ! [[ "$(rails -v)" =~ Rails\ ([0-9])\..* ]]
-	if ! rails -v | grep -Eq 'Rails\ ([0-9])\..*'
+	local rails_version
+	if ! rails_version="$(rails -v 2>&1)"
+	then
+		if [[ "$rails_version" == "rbenv: rails: command not found"* ]]
+		then
+			# rbenv says stuff like:
+ 			#  rbenv: rails: command not found
+			#  The `rails' command exists in these Ruby versions:
+			#   2.2.0
+			#   2.4.4
+			#
+			# Handle it like uninstalled
+			return
+		else
+			# unknown rails in PATH that can not do -v
+			warn "Warning: failed to get rails version"
+			echo ""
+			echo "$rails_version"
+			echo ""
+		fi
+		return
+	fi
+	if ! echo "$rails_version" | grep -Eq 'Rails\ ([0-9])\..*'
 	then
 		warn "Warning: failed to parse rails version"
 		warn ""
