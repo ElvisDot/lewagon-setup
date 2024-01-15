@@ -1776,8 +1776,13 @@ function check_github_access() {
 			warn "Warning: got unexpected github cli git protocol '$git_protocol'"
 		fi
 	fi
+	if [ "$GITHUB_CI" != "" ]
+	then
+		warn "Warning: ignoring gh auth because GITHUB_CI is set"
+		return
+	fi
 	local is_logged_in=1
-	if [ "$arg_full" == "1" ] && [ "$GITHUB_CI" == "" ]
+	if [ "$arg_full" == "1" ]
 	then
 		local ssh_response
 		ssh_response="$(ssh -T git@github.com)"

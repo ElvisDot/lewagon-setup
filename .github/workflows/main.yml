@@ -99,7 +99,7 @@ jobs:
           git clone https://github.com/lewagon/dotfiles ~/code/fakeuser/dotfiles
 
       - name: Run the doctor
-        run: ./doc.sh
+        run: GITHUB_CI=1 ./doc.sh
 
       # - name: Run the doctor (curl web)
       #   run: curl -s https://raw.githubusercontent.com/ElvisDot/lewagon-setup/master/doc.sh | bash -s -- --course web
