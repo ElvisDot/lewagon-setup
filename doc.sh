@@ -2256,12 +2256,30 @@ function check_postgres_create_db() {
 	if ! psql -U "$(whoami)" -d postgres -c 'CREATE DATABASE lewagon_doc_test_db_delete_me;' > /dev/null
 	then
 		warn "Warning: failed to create postgres database"
+		return 1
 	fi
 	if ! psql -U "$(whoami)" -d postgres -c 'DROP DATABASE lewagon_doc_test_db_delete_me;' > /dev/null
 	then
 		warn "Warning: failed to delete postgres database"
+		return 1
 	fi
-	return 1
+	return 0
+}
+
+function show_postgres_logs_macos() {
+	local log
+	for log in \
+		/opt/Homebrew/var/log/postgresql@"$WANTED_POSTGRES_VERSION".log \
+		/usr/local/var/log/postgresql@"$WANTED_POSTGRES_VERSION".log
+	do
+		[[ -f "$log" ]] || continue
+
+		log "Got postgres logfile at ${_color_GREEN}$log"
+		log "head:"
+		head "$log"
+		log "tail:"
+		tail "$log"
+	done
 }
 
 function check_database() {
@@ -2282,6 +2300,10 @@ function check_database() {
 		warn ""
 		warn "           ${_color_WHITE}psql -lqt -U \"$(whoami)"\"
 		warn ""
+		if is_mac
+		then
+			show_postgres_logs_macos
+		fi
 	fi
 }
 
