@@ -1999,13 +1999,13 @@ function check_postgres_and_sqlite_installed() {
 }
 
 function check_postgres_running_mac() {
-	local postgres_status
-	if ! postgres_status="$(brew services | grep postgres)"
+	local postgres_status_matches
+	if ! postgres_status_matches="$(brew services | grep postgres)"
 	then
 		warn "Warning: failed to get postgres status"
 		return
 	fi
-	if [ "$postgres_status" == "" ]
+	if [ "$postgres_status_matches" == "" ]
 	then
 		warn "Warning: no postgres service installed"
 		warn "         is postgres installed with brew?"
@@ -2015,11 +2015,39 @@ function check_postgres_running_mac() {
 		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 		return
 	fi
-	if ! echo "$postgres_status" | awk '{ print $2 }' | grep -q started
+	local postgres_status_column
+	postgres_status_column="$(echo "$postgres_status_matches" | awk '{ print $2 }')"
+	if ! echo "$postgres_status_column" | grep -q started
 	then
+		if [ "$(echo "$postgres_status_matches" | xargs)" == "postgresql@$WANTED_POSTGRES_VERSION none" ]
+		then
+			# there is only one postgres version installed
+			# it is the correct one
+			# it is not running
+			# and it is not in error state
+			# -> just start it duh
+			log "starting postgres service ..."
+			if ! brew services start postgresql@"$WANTED_POSTGRES_VERSION"
+			then
+				warn "Warning: failed to start postgres"
+				warn "         running the command below failed with the error above"
+				warn ""
+				warn "           ${_color_WHITE}brew services start postgresql@$WANTED_POSTGRES_VERSION"
+			else
+				log -n "waiting for postgres to get healthy"
+				local i
+				for((i=0;i<3;i++))
+				do
+					printf '.'
+					sleep 1
+				done
+				printf '\n'
+			fi
+			return
+		fi
 		warn "Warning: postgres is not running"
 		warn ""
-		warn "         $_color_WHITE$postgres_status"
+		warn "         $_color_WHITE$postgres_status_matches"
 		warn ""
 		# check if a non brew postgres is blocking the port
 		local blocked_port
