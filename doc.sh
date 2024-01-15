@@ -2177,13 +2177,33 @@ function check_postgres_role() {
 		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 		return
 	fi
-	if ! sudo -u postgres psql -d postgres -c "SELECT * FROM pg_roles WHERE rolname = '$USER';" | grep -q '1 row'
+	local postgres_roles
+	if is_windows || is_macos
 	then
-		warn "Warning: missing postgresql role"
-		warn "         try running this command"
-		warn ""
-		warn "         ${_color_WHITE}sudo -u postgres psql --command 'CREATE ROLE \"$(whoami)\" LOGIN createdb superuser;'"
-		warn ""
+		if ! postgres_roles="$(sudo -u postgres psql -d postgres -c "SELECT * FROM pg_roles WHERE rolname = '$USER';" 2>/dev/null)"
+		then
+			warn "Warning: failed to get postgres role"
+			warn "         try running this and look at the errors"
+			warn ""
+			warn "           ${_color_WHITE}sudo -u postgres psql -d postgres -c \"SELECT * FROM pg_roles WHERE rolname = '$USER';\""
+			warn ""
+			return
+		fi
+		if ! echo "$postgres_roles" | grep -q '1 row'
+		then
+			warn "Warning: missing postgresql role"
+			warn "         try running this command"
+			warn ""
+			warn "         ${_color_WHITE}sudo -u postgres psql --command 'CREATE ROLE \"$(whoami)\" LOGIN createdb superuser;'"
+			warn ""
+		fi
+	elif is_mac
+	then
+		# TODO: find a linux equivalent cheat on macOS to check roles
+		#       we need to somehow abuse sudo or anything else to check if our role exists
+		#       but we can not access the database since we assume our role does not exist
+		warn "Warning: your role might be missing but the doctor is not sure"
+		warn "         is anyone else using this device?"
 	fi
 }
 
