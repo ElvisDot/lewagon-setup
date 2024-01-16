@@ -57,7 +57,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1705323345
+LAST_DOC_UPDATE=1705405589
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2980,6 +2980,18 @@ function check_rails_version() {
 			#   2.4.4
 			#
 			# Handle it like uninstalled
+			return
+		elif [[ "$rails_version" == "Rails is not currently installed on this system"* ]]
+		then
+			# Rails is so fame that it gets a full on placeholder
+			# even if it is not installed
+			# lets not throw a warning that we could not parse that output as rails version
+			#
+			# Rails is not currently installed on this system. To get the latest version, simply type:
+			#
+			#     $ sudo gem install rails
+			#
+			#     You can then rerun your "rails" command.
 			return
 		else
 			# unknown rails in PATH that can not do -v
