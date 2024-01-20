@@ -45,7 +45,7 @@ num_errors=0
 g_github_ssh_username=''
 g_github_cli_username=''
 g_gh_auth_status=''
-g_ipv4_ok=0
+# g_ipv4_ok=0 # costs time to check and is not very interesting anyways
 g_ipv6_ok=0
 
 MIN_DISK_SPACE_GB=10
@@ -323,6 +323,7 @@ function check_http() {
 	local arg=''
 	local host=''
 	local arg_family=''
+	local ip_flag=''
 	for arg in "$@"
 	do
 		if [ "$host" == "" ]
@@ -346,12 +347,12 @@ function check_http() {
 	then
 		[[ "$arg_family" == "ipv4" ]] && ip_flag='-4'
 		[[ "$arg_family" == "ipv6" ]] && ip_flag='-6'
-		curl "$ip_flag" --max-time 10 "$host" &>/dev/null && return 0
+		curl $ip_flag --max-time 10 "$host" &>/dev/null && return 0
 	elif [ -x "$(command -v wget)" ]
 	then
 		[[ "$arg_family" == "ipv4" ]] && ip_flag='--inet4-only'
 		[[ "$arg_family" == "ipv6" ]] && ip_flag='--inet6-only'
-		wget "$ip_flag" --timeout 10 --tries 1 "$host" &>/dev/null && return 0
+		wget $ip_flag --timeout 10 --tries 1 "$host" &>/dev/null && return 0
 	fi
 	return 1
 }
@@ -381,7 +382,6 @@ function fail_if_no_internet() {
 	do
 		if ping "$ip" -c 1 -W 2 &>/dev/null
 		then
-			g_ipv4_ok=1
 			return
 		fi
 	done
