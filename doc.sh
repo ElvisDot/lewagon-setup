@@ -45,6 +45,8 @@ num_errors=0
 g_github_ssh_username=''
 g_github_cli_username=''
 g_gh_auth_status=''
+g_ipv4_ok=0
+g_ipv6_ok=0
 
 MIN_DISK_SPACE_GB=10
 
@@ -57,7 +59,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1705405589
+LAST_DOC_UPDATE=1705729882
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -260,7 +262,7 @@ function error() {
 	then
 		num_errors="$((num_errors + 1))"
 	fi
-	printf '%b[%b-%b]%b %b%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$msg" "$_color_RESET"
+	printf '%b[%b-%b]%b %b%b\n' "$_color_WHITE" "$_color_RED" "$_color_WHITE" "$_color_red" "$msg" "$_color_RESET" 1>&2
 }
 
 function warn() {
@@ -296,16 +298,60 @@ function okay() {
 function dbg() {
 	[ "$arg_verbose" -gt "0" ] || return
 
-	printf '%b[*]%b %b%b\n' "$_color_WHITE" "$_color_RESET" "$1" "$_color_RESET"
+	local newline='\n'
+	if [ "$1" == "-n" ]
+	then
+		newline=''
+		shift
+	fi
+	printf '%b[*]%b %b%b%b' "$_color_WHITE" "$_color_RESET" "$1" "$_color_RESET" "$newline"
+}
+
+function dbg_echo() {
+	[ "$arg_verbose" -gt "0" ] || return
+
+	local newline='\n'
+	if [ "$1" == "-n" ]
+	then
+		newline=''
+		shift
+	fi
+	printf '%b%b%b%b' "$_color_WHITE" "$1" "$_color_RESET" "$newline"
 }
 
 function check_http() {
+	local arg=''
+	local host=''
+	local arg_family=''
+	for arg in "$@"
+	do
+		if [ "$host" == "" ]
+		then
+			host="$arg"
+		elif [ "$arg" == "--ipv4" ]
+		then
+			arg_family=ipv4
+		elif [ "$arg" == "--ipv6" ]
+		then
+			arg_family=ipv6
+		else
+			error "Error: unsupported arg for check_http '$arg'"
+			error "       this is an issue with the doctor please report it here"
+			error ""
+			error "       https://github.com/ElvisDot/lewagon-setup/issues"
+			return 1
+		fi
+	done
 	if [ -x "$(command -v curl)" ]
 	then
-		curl --max-time 10 "$host" &>/dev/null && return 0
+		[[ "$arg_family" == "ipv4" ]] && ip_flag='-4'
+		[[ "$arg_family" == "ipv6" ]] && ip_flag='-6'
+		curl "$ip_flag" --max-time 10 "$host" &>/dev/null && return 0
 	elif [ -x "$(command -v wget)" ]
 	then
-		wget --timeout 10 --tries 1 "$host" &>/dev/null && return 0
+		[[ "$arg_family" == "ipv4" ]] && ip_flag='--inet4-only'
+		[[ "$arg_family" == "ipv6" ]] && ip_flag='--inet6-only'
+		wget "$ip_flag" --timeout 10 --tries 1 "$host" &>/dev/null && return 0
 	fi
 	return 1
 }
@@ -335,6 +381,7 @@ function fail_if_no_internet() {
 	do
 		if ping "$ip" -c 1 -W 2 &>/dev/null
 		then
+			g_ipv4_ok=1
 			return
 		fi
 	done
@@ -865,8 +912,42 @@ function fix_dns_wsl() {
 	error ""
 }
 
+function check_ipv6_ok() {
+	dbg -n "checking ipv6 ... "
+
+	local ips=(2001:4860:4860::8888 2606:4700:4700::1111)
+	for ip in "${ips[@]}"
+	do
+		if ping "$ip" -6 -c 1 -W 2 &>/dev/null
+		then
+			g_ipv6_ok=1
+			dbg_echo "${_color_GREEN}OK"
+			return
+		fi
+	done
+
+	# Some networks including github CI might block ping
+	# So do a http fallback test before concluding the internet is down
+	local host
+	local hosts=(http://github.com http://lewagon.com http://google.com)
+	for host in "${hosts[@]}"
+	do
+		if check_http "$host" --ipv6
+		then
+			g_ipv6_ok=1
+			dbg_echo "${_color_GREEN}OK"
+			return
+		fi
+	done
+	if [ "$g_ipv6_ok" == "0" ]
+	then
+		dbg_echo "${_color_RED}NOT WORKING"
+	fi
+}
+
 function check_basics() {
 	dbg "checking internet connectivity ..."
+	check_ipv6_ok
 	if ! check_dns
 	then
 		fail_if_no_internet
@@ -2863,27 +2944,35 @@ function check_windows_anti_virus() {
 }
 
 function check_disk_space() {
-	dbg "checking disk space ..."
+	dbg -n "checking disk space ..."
 	# only check the / partition
+
+	_is_warn_disk=0
+
+	_warn_disk() {
+		[[ "$_is_warn_disk" == "0" ]] && printf '\n'
+		warn "Warning: failed to get free disk space"
+		_is_warn_disk=1
+	}
 
 	local avail
 	if is_mac
 	then
 		if ! avail="$(df -h /System/Volumes/Data | awk '{ print $4 }' | tail -n1)"
 		then
-			warn "Warning: failed to get free disk space"
+			_warn_disk "Warning: failed to get free disk space"
 			return
 		fi
 	else
 		if ! avail="$(df -h 2>/dev/null | grep ' /$' | awk '{ print $4 }')"
 		then
-			warn "Warning: failed to get free disk space"
+			_warn_disk "Warning: failed to get free disk space"
 			return
 		fi
 	fi
 	if [[ "$avail" =~ ^[0-9]+M$ ]] || [[ "$avail" =~ ^[0-9]+K$ ]]
 	then
-		warn "Warning: detected too little free disk space $avail"
+		_warn_disk "Warning: detected too little free disk space $avail"
 	# does not work in bash 3
 	# elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
 	elif echo "$avail" | grep -Eq '^([0-9]+)Gi?$'
@@ -2893,12 +2982,14 @@ function check_disk_space() {
 		avail_gb="$(echo "$avail" | grep -Eo '^([0-9]+)Gi?$' | cut -d'G' -f1)"
 		if [ "$avail_gb" -lt "$MIN_DISK_SPACE_GB" ]
 		then
-			warn "Warning: you only seem to have $avail_gb GB free disk space"
-			warn "         it is recommended to have more than $MIN_DISK_SPACE_GB GB"
+			_warn_disk "Warning: you only seem to have $avail_gb GB free disk space"
+			_warn_disk "         it is recommended to have more than $MIN_DISK_SPACE_GB GB"
 		fi
 	else
-		warn "Warning: failed to detect available disk space"
+		_warn_disk "Warning: failed to detect available disk space"
 	fi
+
+	[[ "$_is_warn_disk" == "0" ]] && dbg_echo " $avail${_color_GREEN} OK"
 }
 
 function check_rvm() {
