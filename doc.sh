@@ -59,7 +59,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1705729882
+LAST_DOC_UPDATE=1706100861
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2998,8 +2998,7 @@ function check_rvm() {
 		warn "Warning: rvm folder found ~/.rvm"
 		warn "         rvm might be conflicting with rbenv"
 		warn "         the Le Wagon setup recommends rbenv over rvm"
-		warn "         if you know what you are doing"
-		warn "         this is fine"
+		warn "         If you know what you are doing this is fine"
 		return
 	fi
 	if [ -x "$(command -v rvm)" ]
@@ -3007,8 +3006,7 @@ function check_rvm() {
 		warn "Warning: rvm executable found"
 		warn "         rvm might be conflicting with rbenv"
 		warn "         the Le Wagon setup recommends rbenv over rvm"
-		warn "         if you know what you are doing"
-		warn "         this is fine"
+		warn "         If you know what you are doing this is fine"
 		return
 	fi
 }
@@ -3858,6 +3856,23 @@ function check_gh_email_public_and_matching() {
 	fi
 }
 
+function check_rubocop() {
+	dbg "checking rubocop ..."
+	[[ -x "$(command -v rubocop)" ]] || return
+
+	# TODO: run 'rubocop -d' in the challenges repo
+	# 	then verify that the correct configs are loaded and no additonal ones
+	# 	but ensure that it does not start linting the challenges
+
+	if [ -f ~/.rubocop.yml ]
+	then
+		warn "Warning: found $_color_RED~/.rubocop.yml"
+		warn "         this user wide rubocop config could mess with the"
+		warn "         le wagon challenges rubocop config."
+		warn "         If you know what you are doing this is fine"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -3922,6 +3937,7 @@ function main() {
 		check_git_remote_in_fullstack_challenges
 		check_git_branch_in_fullstack_challenges
 		check_rubygems
+		check_rubocop
 	elif is_data
 	then
 		check_docker
