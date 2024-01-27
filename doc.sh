@@ -59,7 +59,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1706100861
+LAST_DOC_UPDATE=1706359915
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1605,7 +1605,7 @@ function run_dotfiles_install() {
 			if [ ! -d "$dotfiles_dir" ]
 			then
 				log "Creating folder $_color_green$dotfiles_dir"
-				if ! mkdir "$dotfiles_dir"
+				if ! mkdir -p "$dotfiles_dir"
 				then
 					error "Error: failed to create $dotfiles_dir"
 					exit 1
