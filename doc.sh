@@ -560,8 +560,25 @@ function check_brew() {
 
 	if [ ! -f ${HOMEBREW_PREFIX}/bin/brew ]
 	then
-		# install brew
-		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+		# TODO:
+		# https://github.com/ElvisDot/lewagon-setup/issues/24
+		# will fail with the following brew warning
+		#
+		# Warning: Running in non-interactive mode because `stdin` is not a TTY.
+		# Need sudo access on macOS (e.g. the user $USER needs to be an Administrator)!
+		#
+		# then the doctor will fail in the next step
+		# can we either invoke this with sudo or force the doctor to be interactive?
+		# otherwise this does not make sense
+		if ! /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+		then
+			error "Error: failed to install brew."
+			error "       Please run the following command and check the errors"
+			error ""
+			error "       ${_color_WHITE}/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+			error ""
+			exit 1
+		fi
 
 		# failed install
 		if [ ! -f ${HOMEBREW_PREFIX}/bin/brew ]
