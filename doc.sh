@@ -1773,8 +1773,13 @@ function check_dotfiles() {
 	do
 		[[ ! -f "$dotfile" ]] && broken_links=1
 
-		# ignore non symlink dotfiles
-		[[ -L "$dotfile" ]] || break
+		# non symlink dotfiles
+		if [[ ! -L "$dotfile" ]]
+		then
+			warn "Warning: found dotfile that is not a symlink ${_color_red}$dotfile"
+			broken_links=1
+			continue
+		fi
 
 		# if the symlink is dead
 		# (pointing to a invalid file)
@@ -1795,10 +1800,9 @@ function check_dotfiles() {
 	then
 		found_dotfiles=1
 	fi
-	# TODO: add comment explaining this line
-	#       i do not understand it :D
 	if [ ! -f ~/.zshrc ]
 	then
+		warn "Warning: missing file ~/.zshrc"
 		found_dotfiles=0
 	fi
 	if [ ! -f ~/.zprofile ] && is_data
@@ -1807,8 +1811,12 @@ function check_dotfiles() {
 		error "Error: missing zprofile in dotfiles"
 		found_dotfiles=0
 	fi
-	if [ "$found_dotfiles" == "1" ] && grep -q "rbenv init" ~/.zshrc
+	if [ "$found_dotfiles" == "1" ]
 	then
+		if ! grep -q "rbenv init" ~/.zshrc
+		then
+			warn "Warning: did not find 'rbenv init' in ~/.zshrc"
+		fi
 		return 0
 	fi
 	return 1
