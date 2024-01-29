@@ -3979,6 +3979,29 @@ function check_pyenv_virtualenv() {
 	fi
 }
 
+function check_ohmyzsh() {
+	dbg "checking oh-my-zsh ..."
+
+	# TODO: check if the folder is not empty
+	#       check if it contains correct files
+	#       check if it is corrupted and the install would fail
+	#       as a fix suggest deleting it. Before suggesting that
+	#       check if there are custom plugins/themes/prompts or similar
+	#
+	#	it being loaded is already checked in the zshrc check
+	[[ -d ~/.oh-my-zsh ]] && return
+
+	if ! sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+	then
+		# that usually fails when its already there and not empty
+		warn "Warning: failed to install oh-my-zsh"
+		warn "         please run the following command and check for errors"
+		warn ""
+		warn "  ${_color_WHITE}sh -c \"\$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
+		warn ""
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4031,6 +4054,7 @@ function main() {
 	check_c_compiler
 	check_locale
 	check_browser_env
+	check_ohmyzsh
 	if is_web
 	then
 		check_ruby
