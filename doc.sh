@@ -4058,13 +4058,6 @@ function main() {
 		error "Error: missing dotfiles aborting"
 		exit 1
 	fi
-	# TODO: remove next batch
-	local git_email
-	git_email="$(git config --global user.email)"
-	if [ "$git_email" == "catriona.beamish@gmail.com" ]
-	then
-		warn "Warning: your git email is set to $_color_red$git_email"
-	fi
 	if ! check_github_name_matches
 	then
 		# those two checks
