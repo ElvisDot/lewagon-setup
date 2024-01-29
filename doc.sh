@@ -55,11 +55,12 @@ WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
 WANTED_NODE_VERSION='16.15.1'
 WANTED_RUBY_VERSION='3.1.2'
+WANTED_PYTHON_VERSION='3.10.6'
 WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1706359915
+LAST_DOC_UPDATE=1706531284
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3890,6 +3891,53 @@ function check_rubocop() {
 	fi
 }
 
+function _run_data_script() {
+	local script_cmd="$1"
+	local tmp_log
+	if ! tmp_log="$(mktemp /tmp/lewagon_doctor_XXXXXXX.txt)"
+	then
+		error "Error: failed to use mktemp"
+		return
+	fi
+	if ! eval "$script_cmd" | tee "$tmp_log"
+	then
+		error "Error: failed to run official Le Wagon data setup check script"
+		error "       please run the following command and check for errors:"
+		error ""
+		error "  ${_color_WHITE}$script_cmd"
+		error ""
+		[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+	fi
+	if grep -q '❌' "$tmp_log"
+	then
+		error "Error: failed to run official Le Wagon data setup check script"
+		error "       please run the following command and check for ❌ errors:"
+		error ""
+		error "  ${_color_WHITE}$script_cmd"
+		error ""
+		[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+	fi
+	if ! grep -q '✅' "$tmp_log"
+	then
+		error "Error: failed to run official Le Wagon data setup check script"
+		error "       missed a checkmark ✅ in the output of the following command:"
+		error ""
+		error "  ${_color_WHITE}$script_cmd"
+		error ""
+		[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+	fi
+	[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+}
+
+function check_data_official_lewagon_checks() {
+	dbg "running Le Wagon data check scripts ..."
+	# https://github.com/lewagon/data-setup/blob/efe82062ec304f1bfc3489594e37c269a1213166/WINDOWS.md#python-setup-check-up
+
+	_run_data_script $'zsh -c "$(curl -fsSL https://raw.githubusercontent.com/lewagon/data-setup/master/checks/python_checker.sh)" '"$WANTED_PYTHON_VERSION"
+	_run_data_script $'zsh -c "$(curl -fsSL https://raw.githubusercontent.com/lewagon/data-setup/master/checks/pip_check.sh)"'
+	_run_data_script $'python -c "$(curl -fsSL https://raw.githubusercontent.com/lewagon/data-setup/master/checks/pip_check.py)"'
+}
+
 function main() {
 	check_colors
 	device_info
@@ -3960,6 +4008,7 @@ function main() {
 		check_docker
 		check_asdf_python
 		check_jupyter_config
+		check_data_official_lewagon_checks
 	fi
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
 	then
