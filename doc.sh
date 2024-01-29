@@ -3899,8 +3899,9 @@ function _run_data_script() {
 		error "Error: failed to use mktemp"
 		return
 	fi
-	if ! eval "$script_cmd" | tee "$tmp_log"
+	if ! eval "$script_cmd" &> "$tmp_log"
 	then
+		cat "$tmp_log"; rm "$tmp_log"
 		error "Error: failed to run official Le Wagon data setup check script"
 		error "       please run the following command and check for errors:"
 		error ""
@@ -3910,6 +3911,7 @@ function _run_data_script() {
 	fi
 	if grep -q '❌' "$tmp_log"
 	then
+		cat "$tmp_log"; rm "$tmp_log"
 		error "Error: failed to run official Le Wagon data setup check script"
 		error "       please run the following command and check for ❌ errors:"
 		error ""
@@ -3919,12 +3921,13 @@ function _run_data_script() {
 	fi
 	if ! grep -q '✅' "$tmp_log"
 	then
+		cat "$tmp_log"; rm "$tmp_log"
 		error "Error: failed to run official Le Wagon data setup check script"
 		error "       missed a checkmark ✅ in the output of the following command:"
 		error ""
 		error "  ${_color_WHITE}$script_cmd"
 		error ""
-		[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+		return
 	fi
 	[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
 }
