@@ -60,7 +60,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1706531284
+LAST_DOC_UPDATE=1706534020
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -4002,6 +4002,35 @@ function check_ohmyzsh() {
 	fi
 }
 
+function check_gems() {
+	dbg "checking gems ..."
+
+	[[ ! -x "$(command -v ruby)" ]] && return
+
+	local check_gems_script
+	read -r -d '' check_gems_script <<-'EOF'
+	REQUIRED_GEMS = %w[colored faker http pry-byebug rake rails rest-client rspec rubocop-performance sqlite3]
+	MINIMUM_AVATAR_SIZE = 2 * 1024
+
+	REQUIRED_GEMS.each do |the_gem|
+	  begin
+	    require the_gem
+	  rescue LoadError
+	    puts "⚠️  The gem '#{the_gem}' is missing."
+
+	    puts "1️⃣ Please run `gem uninstall -qxaI #{REQUIRED_GEMS.join(" ")}`"
+	    puts "2️⃣ Then run `gem install #{REQUIRED_GEMS.join(" ")}`"
+	    puts "3️⃣ Then retry this check!"
+	    exit 1
+	  end
+	end
+	EOF
+	if ! ruby -e "$check_gems_script"
+	then
+		warn "Warning: missing gems"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4068,6 +4097,7 @@ function main() {
 		check_git_branch_in_fullstack_challenges
 		check_rubygems
 		check_rubocop
+		check_gems
 	elif is_data
 	then
 		check_docker
