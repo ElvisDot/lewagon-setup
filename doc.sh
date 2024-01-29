@@ -3951,6 +3951,26 @@ function check_conda() {
 	warn "         If you know what you are doing this is fine"
 }
 
+function check_pyenv_virtualenv() {
+	dbg "checking pyenv virtualenv ..."
+
+	[[ ! -x "$(command -v pyenv)" ]] && return
+
+	local envs
+	if ! envs="$(pyenv virtualenvs)"
+	then
+		error "Error: failed to run ${_color_WHITE}pyenv virtualenvs"
+		return
+	fi
+	# shellcheck disable=SC2063
+	if ! echo "$envs" | grep -q '* lewagon '
+	then
+		log " ➜ ${_color_WHITE}pyenv virtualenvs"
+		echo "$envs"
+		error "Error: ${_color_yellow}lewagon${_color_red} is not set as your virtualenv"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4023,6 +4043,7 @@ function main() {
 		check_jupyter_config
 		check_conda
 		check_data_official_lewagon_checks
+		check_pyenv_virtualenv
 	fi
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
 	then
