@@ -3938,6 +3938,16 @@ function check_data_official_lewagon_checks() {
 	_run_data_script $'python -c "$(curl -fsSL https://raw.githubusercontent.com/lewagon/data-setup/master/checks/pip_check.py)"'
 }
 
+function check_conda() {
+	dbg "checking conda ..."
+
+	[[ ! -x "$(command -v conda)" ]] && return
+
+	warn "Warning: found ${_color_RED}conda${_color_yellow} in your PATH"
+	warn "         Le Wagon recommends to use pyenv and it might conflict with conda"
+	warn "         If you know what you are doing this is fine"
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4008,6 +4018,7 @@ function main() {
 		check_docker
 		check_asdf_python
 		check_jupyter_config
+		check_conda
 		check_data_official_lewagon_checks
 	fi
 	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
