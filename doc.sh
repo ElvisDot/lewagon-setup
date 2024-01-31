@@ -42,6 +42,7 @@ bootcamp=unkown
 num_warnings=0
 num_errors=0
 
+g_vscode_extensions_cache=''
 g_github_ssh_username=''
 g_github_cli_username=''
 g_gh_auth_status=''
@@ -60,7 +61,7 @@ WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1706534020
+LAST_DOC_UPDATE=1706674361
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1111,6 +1112,36 @@ function is_web() {
 	return 1
 }
 
+function list_vscode_extensions() {
+	# returns cached extensions.json
+	# and falls back to the more buggy
+	# code --list--extensions if the json is not found
+	if [ "$g_vscode_extensions_cache" != "" ]
+	then
+		echo "$g_vscode_extensions_cache"
+		return
+	fi
+	local extension_dir="$HOME/.vscode/extensions"
+	is_windows && extension_dir="$HOME/.vscode-server/extensions"
+
+	local ext_json="$extension_dir/extensions.json"
+	if [ -f "$ext_json" ]
+	then
+		if ! g_vscode_extensions_cache="$(cat "$ext_json")"
+		then
+			g_vscode_extensions_cache=''
+		fi
+	else
+		# this command is not stable and fails on healthy systems
+		# it should be a last resort for listing extensions
+		if ! g_vscode_extensions_cache="$(code --list-extensions)"
+		then
+			g_vscode_extensions_cache=''
+		fi
+	fi
+	echo "$g_vscode_extensions_cache"
+}
+
 function detect_bootcamp() {
 	if [ "$arg_course" != "" ]
 	then
@@ -1125,11 +1156,11 @@ function detect_bootcamp() {
 	fi
 	if [ -x "$(command -v code)" ] && [ "$is_vscode_healthy" == "1" ]
 	then
-		if code --list-extensions | grep -q ruby
+		if list_vscode_extensions | grep -q ruby
 		then
 			bootcamp=web
 		fi
-		if code --list-extensions | grep -Eqi '(jupyter|pylance)'
+		if list_vscode_extensions | grep -Eqi '(jupyter|pylance)'
 		then
 			bootcamp=data
 		fi
