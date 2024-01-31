@@ -100,7 +100,7 @@ else
 	# straight copy from the homebrew install script
 	# https://github.com/Homebrew/install/blob/95648ef45c8d59a44fa4ab8f29cdcf17d6ec48ac/install.sh#L127-L138
 	UNAME_MACHINE="$(/usr/bin/uname -m)"
-	if [[ "${UNAME_MACHINE}" == "arm64" ]]
+	if [[ "${UNAME_MACHINE}" = "arm64" ]]
 	then
 		# On ARM macOS, this script installs to /opt/homebrew only
 		HOMEBREW_PREFIX="/opt/homebrew"
@@ -167,22 +167,22 @@ function parse_args() {
 		arg="$1"
 		shift
 
-		if [[ "${arg::2}" == "--" ]]
+		if [[ "${arg::2}" = "--" ]]
 		then
-			if [ "$arg" == "--help" ]
+			if [ "$arg" = "--help" ]
 			then
 				show_help
 				exit 0
-			elif [ "$arg" == "--full" ]
+			elif [ "$arg" = "--full" ]
 			then
 				arg_full=1
-			elif [ "$arg" == "--verbose" ]
+			elif [ "$arg" = "--verbose" ]
 			then
 				arg_verbose=1
-			elif [ "$arg" == "--fix" ]
+			elif [ "$arg" = "--fix" ]
 			then
 				arg_fix=1
-			elif [ "$arg" == "--course" ]
+			elif [ "$arg" = "--course" ]
 			then
 				arg_course="$1"
 				bootcamp="$1"
@@ -193,12 +193,12 @@ function parse_args() {
 					echo "usage: $(basename "$0") --course <web|data>"
 					exit 1
 				fi
-			elif [ "$arg" == "--unix-name" ]
+			elif [ "$arg" = "--unix-name" ]
 			then
 				arg_unix_name="$1"
 				shift
 
-				if [ "$arg_unix_name" == "" ]
+				if [ "$arg_unix_name" = "" ]
 				then
 					echo "usage: $(basename "$0") --unix-name <name>"
 					exit 1
@@ -216,15 +216,15 @@ function parse_args() {
 				show_help
 				exit 1
 			fi
-		elif [[ "${arg::1}" == "-" ]]
+		elif [[ "${arg::1}" = "-" ]]
 		then
 			flags="${arg:1}"
 			while IFS= read -n1 -r flag
 			do
-				if [[ "$flag" == "v" ]]
+				if [[ "$flag" = "v" ]]
 				then
 					arg_verbose="$((arg_verbose+1))"
-				elif [[ "$flag" == "h" ]]
+				elif [[ "$flag" = "h" ]]
 				then
 					show_help
 					exit 0
@@ -243,7 +243,7 @@ function parse_args() {
 parse_args "$@"
 
 function check_colors() {
-	if [ "$NO_COLOR" == "" ] && [ -t 1 ] && [[ "$TERM" =~ color ]]
+	if [ "$NO_COLOR" = "" ] && [ -t 1 ] && [[ "$TERM" =~ color ]]
 	then
 		return
 	fi
@@ -270,7 +270,7 @@ function error() {
 function warn() {
 	local msg="$1"
 	local nl='\n'
-	if [ "$msg" == "-n" ]
+	if [ "$msg" = "-n" ]
 	then
 		nl=''
 		shift
@@ -285,7 +285,7 @@ function warn() {
 
 function log() {
 	local newline='\n'
-	if [ "$1" == "-n" ]
+	if [ "$1" = "-n" ]
 	then
 		newline=''
 		shift
@@ -301,7 +301,7 @@ function dbg() {
 	[ "$arg_verbose" -gt "0" ] || return
 
 	local newline='\n'
-	if [ "$1" == "-n" ]
+	if [ "$1" = "-n" ]
 	then
 		newline=''
 		shift
@@ -313,7 +313,7 @@ function dbg_echo() {
 	[ "$arg_verbose" -gt "0" ] || return
 
 	local newline='\n'
-	if [ "$1" == "-n" ]
+	if [ "$1" = "-n" ]
 	then
 		newline=''
 		shift
@@ -328,13 +328,13 @@ function check_http() {
 	local ip_flag=''
 	for arg in "$@"
 	do
-		if [ "$host" == "" ]
+		if [ "$host" = "" ]
 		then
 			host="$arg"
-		elif [ "$arg" == "--ipv4" ]
+		elif [ "$arg" = "--ipv4" ]
 		then
 			arg_family=ipv4
-		elif [ "$arg" == "--ipv6" ]
+		elif [ "$arg" = "--ipv6" ]
 		then
 			arg_family=ipv6
 		else
@@ -347,13 +347,13 @@ function check_http() {
 	done
 	if [ -x "$(command -v curl)" ]
 	then
-		[[ "$arg_family" == "ipv4" ]] && ip_flag='-4'
-		[[ "$arg_family" == "ipv6" ]] && ip_flag='-6'
+		[[ "$arg_family" = "ipv4" ]] && ip_flag='-4'
+		[[ "$arg_family" = "ipv6" ]] && ip_flag='-6'
 		curl $ip_flag --max-time 10 "$host" &>/dev/null && return 0
 	elif [ -x "$(command -v wget)" ]
 	then
-		[[ "$arg_family" == "ipv4" ]] && ip_flag='--inet4-only'
-		[[ "$arg_family" == "ipv6" ]] && ip_flag='--inet6-only'
+		[[ "$arg_family" = "ipv4" ]] && ip_flag='--inet4-only'
+		[[ "$arg_family" = "ipv6" ]] && ip_flag='--inet6-only'
 		wget $ip_flag --timeout 10 --tries 1 "$host" &>/dev/null && return 0
 	fi
 	return 1
@@ -401,12 +401,12 @@ function fail_if_no_internet() {
 			echo -e "$_color_GREEN\tOK"
 		else
 			echo -e "$_color_RED\tFAILED"
-			[[ "$host" == "http://github.com" ]] && is_fatal=1
+			[[ "$host" = "http://github.com" ]] && is_fatal=1
 		fi
 	done
 	# google and lewagon can fail
 	# but the doctor script depends on connectivity to github
-	if [ "$is_fatal" == "1" ]
+	if [ "$is_fatal" = "1" ]
 	then
 		error "Error: could not ping 8.8.8.8 or do a http request to github.com"
 		error "       is your internet working?"
@@ -483,7 +483,7 @@ function check_user_windows() {
 		return
 	fi
 
-	if [ "$arg_fix" == "1" ]
+	if [ "$arg_fix" = "1" ]
 	then
 		warn "Warning: do not run the script as root"
 	else
@@ -496,20 +496,20 @@ function check_user_windows() {
 	local username
 	local zsh_path
 	zsh_path="$(command -v zsh)"
-	if [ "$zsh_path" == "" ]
+	if [ "$zsh_path" = "" ]
 	then
 		sudo apt-get install -y zsh
 	fi
-	if [ "$zsh_path" == "" ]
+	if [ "$zsh_path" = "" ]
 	then
 		error "Error: you need zsh installed"
 		exit 1
 	fi
 
 	username="$(detect_user)"
-	if [ "$username" == "" ]
+	if [ "$username" = "" ]
 	then
-		if [ "$arg_unix_name" == "" ]
+		if [ "$arg_unix_name" = "" ]
 		then
 			error "Error: you are missing a user please pick a name"
 			error "       and call the doctor with this argument:"
@@ -621,7 +621,7 @@ mac_version=""
 mac_arch=""
 
 function is_mac() {
-	[[ "$detected_os" == "macOS" ]] && return 0
+	[[ "$detected_os" = "macOS" ]] && return 0
 	return 1
 }
 function is_arm() {
@@ -629,7 +629,7 @@ function is_arm() {
 	return 1
 }
 function is_linux() {
-	[[ "$detected_os" == "Linux" ]] && return 0
+	[[ "$detected_os" = "Linux" ]] && return 0
 	return 1
 }
 function is_ubuntu() {
@@ -637,19 +637,19 @@ function is_ubuntu() {
 	return 1
 }
 function is_windows() {
-	[[ "$detected_os" == "WSL" ]] && return 0
+	[[ "$detected_os" = "WSL" ]] && return 0
 	return 1
 }
 
 function device_info() {
 	# os
-	if [[ $OSTYPE == 'darwin'* ]]
+	if [[ $OSTYPE = 'darwin'* ]]
 	then
 		detected_os='macOS'
 	elif grep -q Microsoft /proc/version || uname -a | grep -iq '^Linux.*Microsoft'
 	then
 		detected_os='WSL'
-	elif [[ "$(uname)" == "Linux" ]]
+	elif [[ "$(uname)" = "Linux" ]]
 	then
 		detected_os='Linux'
 	else
@@ -756,7 +756,7 @@ function device_info() {
 		then
 			error "Error: your default WSL version is $_color_RED$_color_red instead of $_color_YELLOW$WANTED_WSL_VERSION"
 		fi
-		if [ "$is_running_default" == "" ]
+		if [ "$is_running_default" = "" ]
 		then
 			warn "Warning: your current WSL is not set as default"
 		fi
@@ -788,7 +788,7 @@ function check_shell() {
 	local default_shell
 	if [ -x "$(command -v getent)" ]
 	then
-		if [[ "$(getent passwd "$USER" | awk -F: '{print $NF}')" == "$(command -v zsh)" ]]
+		if [[ "$(getent passwd "$USER" | awk -F: '{print $NF}')" = "$(command -v zsh)" ]]
 		then
 			# it might not have been applied yet
 			# or the user manually launched a zsh session
@@ -807,7 +807,7 @@ function check_shell() {
 			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 			return
 		fi
-		if [ "$default_shell" == "$(command -v zsh)" ]
+		if [ "$default_shell" = "$(command -v zsh)" ]
 		then
 			return
 		fi
@@ -820,7 +820,7 @@ function check_shell() {
 			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 			return
 		fi
-		if [ "$default_shell" == "" ]
+		if [ "$default_shell" = "" ]
 		then
 			warn "Warning: failed to detect default shell from /etc/passwd"
 			warn "         please report this issue here"
@@ -838,7 +838,7 @@ function check_shell() {
 		return
 	fi
 
-	if [ "$arg_fix" == "0" ]
+	if [ "$arg_fix" = "0" ]
 	then
 		warn "Warning: zsh is not your default shell"
 		warn "         you can set your default shell by running this command:"
@@ -871,7 +871,7 @@ function check_shell() {
 }
 
 function fix_dns_wsl() {
-	if [ "$arg_fix" == "1" ]
+	if [ "$arg_fix" = "1" ]
 	then
 		if [ -f /etc/resolv.conf ]
 		then
@@ -958,7 +958,7 @@ function check_ipv6_ok() {
 			return
 		fi
 	done
-	if [ "$g_ipv6_ok" == "0" ]
+	if [ "$g_ipv6_ok" = "0" ]
 	then
 		dbg_echo "${_color_RED}NOT WORKING"
 	fi
@@ -976,7 +976,7 @@ function check_basics() {
 			fix_dns_wsl
 		fi
 	fi
-	if [ "$arg_full" == "1" ]
+	if [ "$arg_full" = "1" ]
 	then
 		check_ssl
 	fi
@@ -1073,7 +1073,7 @@ function check_vscode() {
 		fi
 		return
 	fi
-	if [ "$vscode_version" == "" ]
+	if [ "$vscode_version" = "" ]
 	then
 		warn "Warning: ${_color_WHITE}code --version$_color_yellow output is empty"
 		return
@@ -1104,11 +1104,11 @@ function check_path_overwritten() {
 }
 
 function is_data() {
-	[[ "$bootcamp" == "data" ]] && return 0
+	[[ "$bootcamp" = "data" ]] && return 0
 	return 1
 }
 function is_web() {
-	[[ "$bootcamp" == "web" ]] && return 0
+	[[ "$bootcamp" = "web" ]] && return 0
 	return 1
 }
 
@@ -1154,7 +1154,7 @@ function detect_bootcamp() {
 	then
 		bootcamp=data
 	fi
-	if [ -x "$(command -v code)" ] && [ "$is_vscode_healthy" == "1" ]
+	if [ -x "$(command -v code)" ] && [ "$is_vscode_healthy" = "1" ]
 	then
 		if list_vscode_extensions | grep -q ruby
 		then
@@ -1186,7 +1186,7 @@ function get_gh_cli_username() {
 	[[ -x "$(command -v gh)" ]] || return 1
 	[[ -x "$(command -v jq)" ]] || return 1
 
-	if [ "$g_github_cli_username" == null ]
+	if [ "$g_github_cli_username" = null ]
 	then
 		return 1
 	fi
@@ -1195,7 +1195,7 @@ function get_gh_cli_username() {
 		g_github_cli_username=null
 		return 1
 	fi
-	if [ "$g_github_cli_username" == "" ]
+	if [ "$g_github_cli_username" = "" ]
 	then
 		g_github_cli_username=null
 		return 1
@@ -1208,7 +1208,7 @@ function get_gh_ssh_username() {
 	# cached github username lookup
 	# based on ssh authentication
 	# (may differ for gh cli see 'get_gh_cli_username')
-	if [ "$g_github_ssh_username" == null ]
+	if [ "$g_github_ssh_username" = null ]
 	then
 		return 1
 	fi
@@ -1233,7 +1233,7 @@ function get_gh_ssh_username() {
 	# then
 	# 	g_github_ssh_username="${BASH_REMATCH[1]}"
 	# fi
-	if [ "$g_github_ssh_username" == "" ]
+	if [ "$g_github_ssh_username" = "" ]
 	then
 		# this is a bit dirty to not check the gh name again
 		# if it failed once
@@ -1250,7 +1250,7 @@ function gh_auth_status() {
 	# cached auth status
 	# prints empty string and returns 1 if not authed
 	# prints the output of "gh auth status" otherwise
-	if [ "$g_gh_auth_status" == "false" ]
+	if [ "$g_gh_auth_status" = "false" ]
 	then
 		return 1
 	fi
@@ -1303,7 +1303,7 @@ function install_rbenv() {
 
 	if [ -d ~/.rvm ] || [ -x "$(command -v rvm)" ]
 	then
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			rvm implode &>/dev/null
 			if [ -d ~/.rvm ]
@@ -1326,7 +1326,7 @@ function install_rbenv() {
 		fi
 	fi
 
-	if [ "$arg_fix" == "0" ]
+	if [ "$arg_fix" = "0" ]
 	then
 		warn "Warning: please install rbenv or run the doctor with $_color_WHITE--fix"
 		return
@@ -1416,7 +1416,7 @@ function check_brew_in_path_after_rbenv_init() {
 		error "Error: please install brew and restart your terminal"
 		exit 1
 	fi
-	if [ "$(command -v brew)" == "/usr/local/bin/brew" ]
+	if [ "$(command -v brew)" = "/usr/local/bin/brew" ]
 	then
 		# TODO: when getting hands on a mac again investigate
 		#       where /usr/local/bin is added to path
@@ -1479,7 +1479,7 @@ function check_brew_in_path_after_rbenv_init() {
 	# and thus not add the shims to the path
 	if [ "$rbenv_ln" -lt "$brew_ln" ]
 	then
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			if is_arm
 			then
@@ -1513,7 +1513,7 @@ function check_brew_in_path_after_rbenv_init() {
 function install_ruby() {
 	local set_version
 	set_version="$(rbenv versions | grep "set by.*.rbenv/version" | awk '{ print $2 }')"
-	if [ "$set_version" != "" ] && [ "$set_version" == "$(wanted_ruby_version)" ]
+	if [ "$set_version" != "" ] && [ "$set_version" = "$(wanted_ruby_version)" ]
 	then
 		# todo: should we throw an error or warning here?
 		#       ruby is not found but rbenv claims to have set a version?
@@ -1524,9 +1524,9 @@ function install_ruby() {
 		tr -d '*' |
 		awk '{ print $1 }' |
 		grep "^$(wanted_ruby_version)$")"
-	if [ "$got_wanted" == "$(wanted_ruby_version)" ]
+	if [ "$got_wanted" = "$(wanted_ruby_version)" ]
 	then
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			log "Setting global ruby version to $_color_GREEN$(wanted_ruby_version)"
 			rbenv global "$(wanted_ruby_version)"
@@ -1577,7 +1577,7 @@ function check_ruby() {
 		# but ruby is not in the path that means rbenv thinks you got ruby
 		# but ruby does not find it self in the shims PATH
 		# that is a unknown bug to me
-		if [ "$rbenv_vers" != "system" ] && [ "$rbenv_vers" == "" ]
+		if [ "$rbenv_vers" != "system" ] && [ "$rbenv_vers" = "" ]
 		then
 			error "Error: your ruby is not in the rbenv shims folder"
 			error "       and the doctor does not know why"
@@ -1589,7 +1589,7 @@ function check_ruby() {
 
 	if is_outdated_ruby
 	then
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			install_ruby
 		else
@@ -1608,7 +1608,7 @@ function check_ruby() {
 function get_code_user_dir() {
 	local dotfiles_dir=''
 	local dotfiles_needed=1
-	if [ "$1" == "--no-dotfiles-needed" ]
+	if [ "$1" = "--no-dotfiles-needed" ]
 	then
 		dotfiles_needed=0
 	fi
@@ -1621,10 +1621,10 @@ function get_code_user_dir() {
 		[[ "$dirname" =~ ^workshops?$ ]] && continue
 		[[ "$dirname" =~ ^students?$ ]] && continue
 		[[ "$dirname" =~ ^lectures?$ ]] && continue
-		[[ "$dirname" == livecode ]] && continue
-		[[ "$dirname" == tmp ]] && continue
-		[[ "$dirname" == reboot ]] && continue
-		if [ "$dotfiles_needed" == "1" ]
+		[[ "$dirname" = livecode ]] && continue
+		[[ "$dirname" = tmp ]] && continue
+		[[ "$dirname" = reboot ]] && continue
+		if [ "$dotfiles_needed" = "1" ]
 		then
 			[[ ! -d "$dir"/dotfiles ]] && continue
 		fi
@@ -1644,7 +1644,7 @@ function run_dotfiles_install() {
 	local dir
 	local dotfiles_dir=''
 	dotfiles_dir="$(get_code_user_dir)"
-	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
+	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" = "" ]
 	then
 		dotfiles_dir="$(get_code_user_dir --no-dotfiles-needed)"
 		local github_username
@@ -1671,7 +1671,7 @@ function run_dotfiles_install() {
 		fi
 		if [ -d "$dotfiles_dir" ] && [ "$dotfiles_dir" != "" ] && [ "$found_wrong_dotfiles" != "" ]
 		then
-			if [ "$arg_fix" == "1" ]
+			if [ "$arg_fix" = "1" ]
 			then
 				if ! mv "$found_wrong_dotfiles" "$dotfiles_dir/dotfiles"
 				then
@@ -1679,7 +1679,7 @@ function run_dotfiles_install() {
 					exit 1
 				fi
 				dotfiles_dir="$(get_code_user_dir)"
-				if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
+				if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" = "" ]
 				then
 					error "Error: did not find dotfiles directory"
 					exit 1
@@ -1721,7 +1721,7 @@ function run_dotfiles_install() {
 		is_pass_note=1
 	fi
 
-	if [ "$is_dotfiles_old" == "1" ]
+	if [ "$is_dotfiles_old" = "1" ]
 	then
 		warn "Warning: skipping dotfiles setup because your dotfiles are outdated"
 		warn "         please run this manually"
@@ -1732,7 +1732,7 @@ function run_dotfiles_install() {
 		return
 	fi
 
-	if [ ! -f install.sh ] || [ "$(awk NF install.sh | wc -l)" == "0" ]
+	if [ ! -f install.sh ] || [ "$(awk NF install.sh | wc -l)" = "0" ]
 	then
 		log "The $_color_yellow$PWD/install.sh$_color_RESET is empty or missing. Trying git restore."
 		git checkout install.sh
@@ -1744,7 +1744,7 @@ function run_dotfiles_install() {
 		error "       ${_color_YELLOW}$PWD/install.sh"
 		exit 1
 	fi
-	if [ "$(awk NF install.sh | wc -l)" == "0" ]
+	if [ "$(awk NF install.sh | wc -l)" = "0" ]
 	then
 		error "Error: empty install.sh script in dotfiles folder"
 		error "       expected the following file to have contents:"
@@ -1764,7 +1764,7 @@ function run_dotfiles_install() {
 		warn "Warning: ${_color_WHITE}$PWD/install.sh$_color_yellow does not start with a zsh shebang"
 		warn "         expected: ${_color_green}#!/bin/zsh"
 		warn "              got: ${_color_red}$install_sh_firstline"
-		if [ "$install_sh_firstline" == "" ]
+		if [ "$install_sh_firstline" = "" ]
 		then
 			local non_empty_line
 			if ! non_empty_line="$(grep -vnH '^[[:space:]]*$' install.sh | head -n1)"
@@ -1779,7 +1779,7 @@ function run_dotfiles_install() {
 	log "running ${_color_green}cd $PWD && zsh install.sh"
 	zsh install.sh
 
-	if [ "$is_pass_note" == "1" ]
+	if [ "$is_pass_note" = "1" ]
 	then
 		if ! grep "password is 123" ~/.zshrc
 		then
@@ -1822,7 +1822,7 @@ function check_dotfiles() {
 			broken_links=1
 		fi
 	done
-	if [ "$broken_links" == "1" ]
+	if [ "$broken_links" = "1" ]
 	then
 		run_dotfiles_install
 	fi
@@ -1842,7 +1842,7 @@ function check_dotfiles() {
 		error "Error: missing zprofile in dotfiles"
 		found_dotfiles=0
 	fi
-	if [ "$found_dotfiles" == "1" ]
+	if [ "$found_dotfiles" = "1" ]
 	then
 		if ! grep -q "rbenv init" ~/.zshrc
 		then
@@ -1905,7 +1905,7 @@ function check_github_access() {
 	then
 		warn "Warning: failed to detect github cli protocol"
 	else
-		if [ "$git_protocol" == "https" ]
+		if [ "$git_protocol" = "https" ]
 		then
 			log "Changing github cli git protocol from ${_color_yellow}https${_color_RESET} to ${_color_green}ssh"
 			gh config set git_protocol ssh --host github.com
@@ -1920,7 +1920,7 @@ function check_github_access() {
 		return
 	fi
 	local is_logged_in=1
-	if [ "$arg_full" == "1" ]
+	if [ "$arg_full" = "1" ]
 	then
 		local ssh_response
 		ssh_response="$(ssh -T git@github.com)"
@@ -1938,7 +1938,7 @@ function check_github_access() {
 		fi
 	fi
 
-	if [ "$is_logged_in" == "1" ]
+	if [ "$is_logged_in" = "1" ]
 	then
 		return
 	fi
@@ -1986,7 +1986,7 @@ function check_github_access() {
 	local ssh_pub
 	for ssh_pub in ~/.ssh/*.pub
 	do
-		[[ "$ssh_pub" == "id_ed25519.pub" ]] && continue
+		[[ "$ssh_pub" = "id_ed25519.pub" ]] && continue
 
 		if [ -f "$ssh_pub" ]
 		then
@@ -2091,7 +2091,7 @@ function check_postgres_and_sqlite_installed() {
 		fi
 		if ! brew ls --versions "postgresql@$WANTED_POSTGRES_VERSION" > /dev/null
 		then
-			if [ "$arg_fix" == "1" ]
+			if [ "$arg_fix" = "1" ]
 			then
 				brew install "postgresql@$WANTED_POSTGRES_VERSION" libpq
 				brew link --force libpq
@@ -2148,7 +2148,7 @@ function check_postgres_running_mac() {
 		warn "Warning: failed to get postgres status"
 		return
 	fi
-	if [ "$postgres_status_matches" == "" ]
+	if [ "$postgres_status_matches" = "" ]
 	then
 		warn "Warning: no postgres service installed"
 		warn "         is postgres installed with brew?"
@@ -2162,7 +2162,7 @@ function check_postgres_running_mac() {
 	postgres_status_column="$(echo "$postgres_status_matches" | awk '{ print $2 }')"
 	if ! echo "$postgres_status_column" | grep -q started
 	then
-		if [ "$(echo "$postgres_status_matches" | xargs)" == "postgresql@$WANTED_POSTGRES_VERSION none" ]
+		if [ "$(echo "$postgres_status_matches" | xargs)" = "postgresql@$WANTED_POSTGRES_VERSION none" ]
 		then
 			# there is only one postgres version installed
 			# it is the correct one
@@ -2252,7 +2252,7 @@ function check_postgres_running_linux() {
 	then
 		if ! /etc/init.d/postgresql status &>/dev/null
 		then
-			if [ "$arg_fix" == "1" ]
+			if [ "$arg_fix" = "1" ]
 			then
 				log "starting postgresql service ..."
 				sudo /etc/init.d/postgresql start
@@ -2280,7 +2280,7 @@ function check_postgres_running_linux() {
 	fi
 	if ! systemctl is-active --quiet postgresql.service
 	then
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			log "starting postgresql service ..."
 			sudo systemctl start postgresql.service
@@ -2328,7 +2328,7 @@ function check_postgres_role() {
 		# to avoid prompting for sudo password on healthy systems
 		return 0
 	fi
-	if [ "$USER" == "root" ]
+	if [ "$USER" = "root" ]
 	then
 		warn "Warning: can not check postgres role when running as root"
 		return 1
@@ -2339,7 +2339,7 @@ function check_postgres_role() {
 		warn "Warning: failed to check postgres role"
 		return 1
 	fi
-	if [ "$USER" != "$username" ] || [ "$USER" == "" ]
+	if [ "$USER" != "$username" ] || [ "$USER" = "" ]
 	then
 		warn "Warning: failed to check postgres role USER='$USER' username='$username'"
 		return 1
@@ -2471,7 +2471,7 @@ function check_sip_mac() {
 		# should we throw a warning here?
 		return
 	fi
-	if [ "$(csrutil status)" == "System Integrity Protection status: enabled." ]
+	if [ "$(csrutil status)" = "System Integrity Protection status: enabled." ]
 	then
 		return
 	fi
@@ -2509,7 +2509,7 @@ function check_github_name_matches() {
 
 	local code_dir_username
 	code_dir_username="$(basename "$(get_code_user_dir)")"
-	if [ "$code_dir_username" == "" ]
+	if [ "$code_dir_username" = "" ]
 	then
 		return 1
 	fi
@@ -2542,7 +2542,7 @@ function check_ready_commit_email() {
 	fi
 	cd "$challenges_dir" || return
 	github_email="$(gh api user | jq -r '.email')"
-	if [ "$github_email" == "null" ]
+	if [ "$github_email" = "null" ]
 	then
 		# email is private no need to compare
 		# TODO: find a way to get email anyways
@@ -2556,14 +2556,14 @@ function check_ready_commit_email() {
 			--grep "(New commit with fixed email|I am so ready)" | \
 			head -n1 | \
 			awk '{print $1 }')"
-	if [ "$ready_email" == "$github_email" ]
+	if [ "$ready_email" = "$github_email" ]
 	then
 		return
 	fi
 	warn 'Warning: your github email is not in the "I am so ready" commit'
 	warn "         ready  email: $_color_RED$ready_email"
 	warn "         github email: $_color_RED$github_email"
-	if [ "$arg_fix" == "1" ]
+	if [ "$arg_fix" = "1" ]
 	then
 		log "Sending ready commit with email '$github_email' ..."
 		git config --global user.email "$github_email"
@@ -2673,7 +2673,7 @@ function underline_str() {
 			printf '^'
 			continue
 		fi
-		if [ "$i" == "$((offset-1))" ] || [ "$i" == "$offset" ] || [ "$i" == "$((offset+1))" ]
+		if [ "$i" == "$((offset-1))" ] || [ "$i" = "$offset" ] || [ "$i" == "$((offset+1))" ]
 		then
 			printf '^'
 		else
@@ -2688,7 +2688,7 @@ function check_zshrc_plugins() {
 	[[ -f ~/.zshrc ]] || return
 
 	num_plugin_lists="$(grep -c "^[[:space:]]*plugins=" ~/.zshrc)"
-	if [ "$num_plugin_lists" == "0" ]
+	if [ "$num_plugin_lists" = "0" ]
 	then
 		warn "Warning: the ${_color_WHITE}plugins=()$_color_yellow list is missing in your ~/.zshrc"
 		warn "         you might be missing out on some fancy plugins Le Wagon recommends"
@@ -2767,7 +2767,7 @@ function check_zshrc_contents() {
 		then
 			if ! grep -E '[^#]*sudo /etc/init.d/postgresql start' ~/.zshrc
 			then
-				if [ "$arg_fix" == "1" ]
+				if [ "$arg_fix" = "1" ]
 				then
 					if [ ! -f /etc/init.d/postgresql ]
 					then
@@ -2879,7 +2879,7 @@ function persist_brew_in_path() {
 	then
 		local fix_brew_cmd
 		fix_brew_cmd="(echo; echo 'eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\"') >> ${shell_profile}"
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			log "persisting brew in PATH ..."
 			warn "Warning: you need to restart your terminal"
@@ -2981,7 +2981,7 @@ function check_if_custom_anti_virus_is_running() {
 	# displayName              : Windows Defender
 	anti_viruses="$(echo "$anti_viruses" | grep -v "Windows Defender" | awk NF)"
 
-	if [ "$anti_viruses" == "" ]
+	if [ "$anti_viruses" = "" ]
 	then
 		return
 	fi
@@ -3007,7 +3007,7 @@ function check_disk_space() {
 	_is_warn_disk=0
 
 	_warn_disk() {
-		[[ "$_is_warn_disk" == "0" ]] && printf '\n'
+		[[ "$_is_warn_disk" = "0" ]] && printf '\n'
 		warn "Warning: failed to get free disk space"
 		_is_warn_disk=1
 	}
@@ -3046,7 +3046,7 @@ function check_disk_space() {
 		_warn_disk "Warning: failed to detect available disk space"
 	fi
 
-	[[ "$_is_warn_disk" == "0" ]] && dbg_echo " $avail${_color_GREEN} OK"
+	[[ "$_is_warn_disk" = "0" ]] && dbg_echo " $avail${_color_GREEN} OK"
 }
 
 function check_rvm() {
@@ -3117,7 +3117,7 @@ function check_rails_version() {
 	local rails_version
 	if ! rails_version="$(rails -v 2>&1)"
 	then
-		if [[ "$rails_version" == "rbenv: rails: command not found"* ]]
+		if [[ "$rails_version" = "rbenv: rails: command not found"* ]]
 		then
 			# rbenv says stuff like:
  			#  rbenv: rails: command not found
@@ -3127,7 +3127,7 @@ function check_rails_version() {
 			#
 			# Handle it like uninstalled
 			return
-		elif [[ "$rails_version" == "Rails is not currently installed on this system"* ]]
+		elif [[ "$rails_version" = "Rails is not currently installed on this system"* ]]
 		then
 			# Rails is so fame that it gets a full on placeholder
 			# even if it is not installed
@@ -3170,7 +3170,7 @@ function check_rails_version() {
 		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 		return
 	fi
-	if [ "$major_rails_version" == "" ]
+	if [ "$major_rails_version" = "" ]
 	then
 		warn "Warning: extracted empty major rails version"
 		warn ""
@@ -3184,7 +3184,7 @@ function check_rails_version() {
 	then
 		return
 	fi
-	if [ "$arg_fix" == "1" ]
+	if [ "$arg_fix" = "1" ]
 	then
 		if ! which gem | grep -qF rbenv/shims
 		then
@@ -3235,7 +3235,7 @@ function check_git_branch_in_fullstack_challenges() {
 		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
 		return
 	fi
-	if [ "$branch" == "" ]
+	if [ "$branch" = "" ]
 	then
 		warn "Warning: the fullstack-challenges branch is empty"
 		warn "         this is super weird and should not happen"
@@ -3252,7 +3252,7 @@ function check_git_branch_in_fullstack_challenges() {
 		warn "         found:    ${_color_RED}$branch"
 		warn "         expected: ${_color_green}master"
 		warn ""
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			if ! git checkout master
 			then
@@ -3295,7 +3295,7 @@ function check_git_remote_in_fullstack_challenges() {
 	then
 		github_username='STUDENT_GITHUB_NAME'
 	fi
-	if [ "$git_remote" == "" ]
+	if [ "$git_remote" = "" ]
 	then
 		warn "Warning: there are no git remotes in $PWD"
 		warn "         you can set them with the following command"
@@ -3344,9 +3344,9 @@ function check_git_remote_in_fullstack_challenges() {
 				origin_issue=1
 			fi
 		fi
-		if [ "$origin_issue" == "1" ]
+		if [ "$origin_issue" = "1" ]
 		then
-			if [ "$arg_fix" == "1" ]
+			if [ "$arg_fix" = "1" ]
 			then
 				log "Fixing fullstack challenges origin remote"
 				git remote set-url origin "git@github.com:$github_username/fullstack-challenges.git"
@@ -3369,7 +3369,7 @@ function check_git_remote_in_fullstack_challenges() {
 			fi
 		fi
 	else
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			log "Adding fullstack challenges origin remote"
 			git remote add origin "git@github.com:$github_username/fullstack-challenges.git"
@@ -3412,9 +3412,9 @@ function check_git_remote_in_fullstack_challenges() {
 			warn "Warning: the challenges upstream remote is not pointing to lewagon"
 			upstream_issue=1
 		fi
-		if [ "$upstream_issue" == "1" ]
+		if [ "$upstream_issue" = "1" ]
 		then
-			if [ "$arg_fix" == "1" ]
+			if [ "$arg_fix" = "1" ]
 			then
 				log "Fixing fullstack challenges upstream remote"
 				git remote set-url upstream git@github.com:lewagon/fullstack-challenges.git
@@ -3437,7 +3437,7 @@ function check_git_remote_in_fullstack_challenges() {
 			fi
 		fi
 	else
-		if [ "$arg_fix" == "1" ]
+		if [ "$arg_fix" = "1" ]
 		then
 			log "Adding fullstack challenges upstream remote"
 			git remote add upstream git@github.com:lewagon/fullstack-challenges.git
@@ -3456,8 +3456,8 @@ function check_git_remote_in_fullstack_challenges() {
 
 function is_wanted_git_repo() {
 	local git_repo="$1"
-	[[ "$git_repo" == './.git' ]] && return 0
-	[[ "$git_repo" == *05-Push-on-Github-Pages* ]] && return 0
+	[[ "$git_repo" = './.git' ]] && return 0
+	[[ "$git_repo" = *05-Push-on-Github-Pages* ]] && return 0
 	return 1
 }
 
@@ -3494,7 +3494,7 @@ function check_git_init_in_fullstack_challenges() {
 		fi
 	done < <(find . -type d -name .git -print0)
 
-	[[ "$all_good" == "1" ]] && return
+	[[ "$all_good" = "1" ]] && return
 
 	if [ "$git_repos" != "" ]
 	then
@@ -3639,9 +3639,9 @@ function check_rubygems() {
 	then
 		ipv4_fallback=1
 	fi
-	if [ "$arg_fix" == "1" ]
+	if [ "$arg_fix" = "1" ]
 	then
-		if [ "$ipv4_fallback" == "0" ]
+		if [ "$ipv4_fallback" = "0" ]
 		then
 			log "Enabling ipv4 fallback for rubygems.org ..."
 			echo ":ipv4_fallback_enabled: true" >> ~/.gemrc
@@ -3650,7 +3650,7 @@ function check_rubygems() {
 		fi
 	else
 		error "Error: failed to connect to rubygems.org"
-		if [ "$ipv4_fallback" == "0" ]
+		if [ "$ipv4_fallback" = "0" ]
 		then
 			error "       this may be fixed with the ipv4 fallback option"
 			error "       you can enable that by running the following command:"
@@ -3768,7 +3768,7 @@ function check_web_gh_webhook() {
 		# assume repo is not forked if this fails
 		return
 	fi
-	if [ "$hooks_json" == "[]" ]
+	if [ "$hooks_json" = "[]" ]
 	then
 		warn "Warning: there is no webhook found in your fullstack repo"
 		warn "         https://github.com/$github_username/fullstack-challenges/settings/hooks"
@@ -3839,7 +3839,7 @@ function check_gh_email_public_and_matching() {
 		warn ""
 		return
 	fi
-	if [ "$gh_email" == "[]" ] || [ "$gh_email" == "null" ]
+	if [ "$gh_email" = "[]" ] || [ "$gh_email" = "null" ]
 	then
 		warn "Warning: your github email is empty"
 		return
@@ -3854,7 +3854,7 @@ function check_gh_email_public_and_matching() {
 		warn ""
 		return
 	fi
-	if [ "$gh_visibility" == "private" ]
+	if [ "$gh_visibility" = "private" ]
 	then
 		warn "Warning: your github email visibility is set to private"
 		warn "         this might cause issues if github blocks you from publishing it"
@@ -3878,7 +3878,7 @@ function check_gh_email_public_and_matching() {
 		warn ""
 		return
 	fi
-	if [ "$gh_email" == "$git_email" ]
+	if [ "$gh_email" = "$git_email" ]
 	then
 		log "Found git email $_color_green$git_email"
 		return
@@ -3886,7 +3886,7 @@ function check_gh_email_public_and_matching() {
 	warn "Warning: your git email does not match your github one"
 	warn "            git: $_color_RED$git_email"
 	warn "         github: $_color_RED$gh_email"
-	if [ "$arg_fix" == "1" ]
+	if [ "$arg_fix" = "1" ]
 	then
 		log "updating git email to be '$gh_email' ..."
 		git config --global user.email "$gh_email"
@@ -4131,7 +4131,7 @@ function main() {
 		check_data_official_lewagon_checks
 		check_pyenv_virtualenv
 	fi
-	if [ "$num_errors" == "0" ] && [ "$num_warnings" == "0" ]
+	if [ "$num_errors" = "0" ] && [ "$num_warnings" = "0" ]
 	then
 		log "✅$_color_GREEN your system is healthy"
 	else
