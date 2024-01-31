@@ -35,6 +35,14 @@ WANTED_DOTFILES_SHA="$(grep '^WANTED_DOTFILES_SHA=' doc.sh | cut -d"'" -f2)"
 latest_dotfiles_sha="$(curl -s https://api.github.com/repos/lewagon/dotfiles/commits/master | jq -r .sha)"
 check_match dotfiles "$WANTED_DOTFILES_SHA" "$latest_dotfiles_sha"
 
+WANTED_GEMS="$(grep -o 'REQUIRED_GEMS = .*' doc.sh)"
+latest_gems="$(curl -s https://raw.githubusercontent.com/lewagon/setup/master/check.rb | grep 'REQUIRED_GEMS = ')"
+check_match gems "$WANTED_GEMS" "$latest_gems"
+
+WANTED_EXT_WEB="$(grep '^WANTED_VSCODE_EXTENSIONS_WEB=' doc.sh | cut -d'"' -f2)"
+latest_ext_web="$(curl -s 'https://raw.githubusercontent.com/lewagon/setup/master/macos.md' | grep '^code --install-extension ' | cut -d' ' -f3 | sed ':a;N;$!ba;s/\n/\\n/g')"
+check_match 'vscode extensions (web)' "$WANTED_EXT_WEB" "$latest_ext_web"
+
 function check_readme() {
 	local ip
 	local found=0

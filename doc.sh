@@ -58,6 +58,8 @@ WANTED_NODE_VERSION='16.15.1'
 WANTED_RUBY_VERSION='3.1.2'
 WANTED_PYTHON_VERSION='3.10.6'
 WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
+# bash arrays would be nicer code but spaced strings are POSIX
+WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings\nemmanuelbeziat.vscode-great-icons\ngithub.github-vscode-theme\nMS-vsliveshare.vsliveshare\nrebornix.ruby\ndbaeumer.vscode-eslint\nRubymaniac.vscode-paste-and-indent\nalexcvzz.vscode-sqlite\nanteprimorac.html-end-tag-labels"
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
@@ -1131,7 +1133,8 @@ function list_vscode_extensions() {
 		then
 			g_vscode_extensions_cache=''
 		fi
-	else
+	elif [ -x "$(command -v code)" ]
+	then
 		# this command is not stable and fails on healthy systems
 		# it should be a last resort for listing extensions
 		if ! g_vscode_extensions_cache="$(code --list-extensions)"
@@ -1140,6 +1143,27 @@ function list_vscode_extensions() {
 		fi
 	fi
 	echo "$g_vscode_extensions_cache"
+}
+
+function check_vscode_extensions_web() {
+	dbg "checking vscode extensions (web bootcamp) ..."
+
+	[ -x "$(command -v code)" ] || return
+
+	local ext
+	printf '%b\n' "$WANTED_VSCODE_EXTENSIONS_WEB" | while IFS='' read -r ext 
+	do
+		# not sure if extensions are case sensitive
+		# just in case they are not lets not warn if there
+		# is another casing installed than expected
+		list_vscode_extensions | grep -iq "$ext" && continue
+
+		warn "Warning: missing vscode extension: ${_color_YELLOW}$ext"
+		warn "         run the following command to install it"
+		warn ""
+		warn "  ${_color_WHITE}code --install-extension $ext"
+		warn ""
+	done
 }
 
 function detect_bootcamp() {
@@ -4110,6 +4134,7 @@ function main() {
 	check_ohmyzsh
 	if is_web
 	then
+		check_vscode_extensions_web
 		check_ruby
 		check_rvm
 		check_asdf_ruby
