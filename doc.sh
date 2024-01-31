@@ -1151,8 +1151,12 @@ function check_vscode_extensions_web() {
 	[ -x "$(command -v code)" ] || return
 
 	local ext
-	printf '%b\n' "$WANTED_VSCODE_EXTENSIONS_WEB" | while IFS='' read -r ext 
+	local win_ext=''
+	is_windows && win_ext='ms-vscode-remote.remote-wsl'
+	printf '%b\n' "$WANTED_VSCODE_EXTENSIONS_WEB\n$win_ext" | while IFS='' read -r ext 
 	do
+		[ "$ext" = "" ] && continue
+
 		# not sure if extensions are case sensitive
 		# just in case they are not lets not warn if there
 		# is another casing installed than expected
@@ -1164,16 +1168,6 @@ function check_vscode_extensions_web() {
 		warn "  ${_color_WHITE}code --install-extension $ext"
 		warn ""
 	done
-
-	local win_ext='ms-vscode-remote.remote-wsl'
-	if is_windows && ! list_vscode_extensions | grep -iqF "$win_ext"
-	then
-		warn "Warning: missing vscode extension: ${_color_YELLOW}$win_ext"
-		warn "         run the following command to install it"
-		warn ""
-		warn "  ${_color_WHITE}code --install-extension $win_ext"
-		warn ""
-	fi
 }
 
 function detect_bootcamp() {
