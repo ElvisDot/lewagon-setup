@@ -100,7 +100,7 @@ else
 	# straight copy from the homebrew install script
 	# https://github.com/Homebrew/install/blob/95648ef45c8d59a44fa4ab8f29cdcf17d6ec48ac/install.sh#L127-L138
 	UNAME_MACHINE="$(/usr/bin/uname -m)"
-	if [[ "${UNAME_MACHINE}" = "arm64" ]]
+	if [ "${UNAME_MACHINE}" = "arm64" ]
 	then
 		# On ARM macOS, this script installs to /opt/homebrew only
 		HOMEBREW_PREFIX="/opt/homebrew"
@@ -162,12 +162,12 @@ function parse_args() {
 	local arg
 	while true
 	do
-		[[ "$#" -lt "1" ]] && break
+		[ "$#" -lt "1" ] && break
 
 		arg="$1"
 		shift
 
-		if [[ "${arg::2}" = "--" ]]
+		if [ "${arg::2}" = "--" ]
 		then
 			if [ "$arg" = "--help" ]
 			then
@@ -216,15 +216,15 @@ function parse_args() {
 				show_help
 				exit 1
 			fi
-		elif [[ "${arg::1}" = "-" ]]
+		elif [ "${arg::1}" = "-" ]
 		then
 			flags="${arg:1}"
 			while IFS= read -n1 -r flag
 			do
-				if [[ "$flag" = "v" ]]
+				if [ "$flag" = "v" ]
 				then
 					arg_verbose="$((arg_verbose+1))"
-				elif [[ "$flag" = "h" ]]
+				elif [ "$flag" = "h" ]
 				then
 					show_help
 					exit 0
@@ -347,13 +347,13 @@ function check_http() {
 	done
 	if [ -x "$(command -v curl)" ]
 	then
-		[[ "$arg_family" = "ipv4" ]] && ip_flag='-4'
-		[[ "$arg_family" = "ipv6" ]] && ip_flag='-6'
+		[ "$arg_family" = "ipv4" ] && ip_flag='-4'
+		[ "$arg_family" = "ipv6" ] && ip_flag='-6'
 		curl $ip_flag --max-time 10 "$host" &>/dev/null && return 0
 	elif [ -x "$(command -v wget)" ]
 	then
-		[[ "$arg_family" = "ipv4" ]] && ip_flag='--inet4-only'
-		[[ "$arg_family" = "ipv6" ]] && ip_flag='--inet6-only'
+		[ "$arg_family" = "ipv4" ] && ip_flag='--inet4-only'
+		[ "$arg_family" = "ipv6" ] && ip_flag='--inet6-only'
 		wget $ip_flag --timeout 10 --tries 1 "$host" &>/dev/null && return 0
 	fi
 	return 1
@@ -401,7 +401,7 @@ function fail_if_no_internet() {
 			echo -e "$_color_GREEN\tOK"
 		else
 			echo -e "$_color_RED\tFAILED"
-			[[ "$host" = "http://github.com" ]] && is_fatal=1
+			[ "$host" = "http://github.com" ] && is_fatal=1
 		fi
 	done
 	# google and lewagon can fail
@@ -621,7 +621,7 @@ mac_version=""
 mac_arch=""
 
 function is_mac() {
-	[[ "$detected_os" = "macOS" ]] && return 0
+	[ "$detected_os" = "macOS" ] && return 0
 	return 1
 }
 function is_arm() {
@@ -629,7 +629,7 @@ function is_arm() {
 	return 1
 }
 function is_linux() {
-	[[ "$detected_os" = "Linux" ]] && return 0
+	[ "$detected_os" = "Linux" ] && return 0
 	return 1
 }
 function is_ubuntu() {
@@ -637,7 +637,7 @@ function is_ubuntu() {
 	return 1
 }
 function is_windows() {
-	[[ "$detected_os" = "WSL" ]] && return 0
+	[ "$detected_os" = "WSL" ] && return 0
 	return 1
 }
 
@@ -649,7 +649,7 @@ function device_info() {
 	elif grep -q Microsoft /proc/version || uname -a | grep -iq '^Linux.*Microsoft'
 	then
 		detected_os='WSL'
-	elif [[ "$(uname)" = "Linux" ]]
+	elif [ "$(uname)" = "Linux" ]
 	then
 		detected_os='Linux'
 	else
@@ -1104,11 +1104,11 @@ function check_path_overwritten() {
 }
 
 function is_data() {
-	[[ "$bootcamp" = "data" ]] && return 0
+	[ "$bootcamp" = "data" ] && return 0
 	return 1
 }
 function is_web() {
-	[[ "$bootcamp" = "web" ]] && return 0
+	[ "$bootcamp" = "web" ] && return 0
 	return 1
 }
 
@@ -1183,8 +1183,8 @@ function get_gh_cli_username() {
 	# cached github username lookup
 	# based on gh cli authentication
 	# (may differ for github ssh see 'get_gh_ssh_username')
-	[[ -x "$(command -v gh)" ]] || return 1
-	[[ -x "$(command -v jq)" ]] || return 1
+	[ -x "$(command -v gh)" ] || return 1
+	[ -x "$(command -v jq)" ] || return 1
 
 	if [ "$g_github_cli_username" = null ]
 	then
@@ -1616,17 +1616,17 @@ function get_code_user_dir() {
 	do
 		local dirname
 		dirname="$(basename "$dir")"
-		[[ -d "$dir" ]] || return 1
+		[ -d "$dir" ] || return 1
 		[[ "$dirname" =~ ^[Ll]e[Ww]agon$ ]] && continue
 		[[ "$dirname" =~ ^workshops?$ ]] && continue
 		[[ "$dirname" =~ ^students?$ ]] && continue
 		[[ "$dirname" =~ ^lectures?$ ]] && continue
-		[[ "$dirname" = livecode ]] && continue
-		[[ "$dirname" = tmp ]] && continue
-		[[ "$dirname" = reboot ]] && continue
+		[ "$dirname" = livecode ] && continue
+		[ "$dirname" = tmp ] && continue
+		[ "$dirname" = reboot ] && continue
 		if [ "$dotfiles_needed" = "1" ]
 		then
-			[[ ! -d "$dir"/dotfiles ]] && continue
+			[ ! -d "$dir"/dotfiles ] && continue
 		fi
 
 		dotfiles_dir="$dir"
@@ -1802,10 +1802,10 @@ function check_dotfiles() {
 	local broken_links=0
 	for dotfile in "${dotfiles[@]}"
 	do
-		[[ ! -f "$dotfile" ]] && broken_links=1
+		[ ! -f "$dotfile" ] && broken_links=1
 
 		# non symlink dotfiles
-		if [[ ! -L "$dotfile" ]]
+		if [ ! -L "$dotfile" ]
 		then
 			warn "Warning: found dotfile that is not a symlink ${_color_red}$dotfile"
 			broken_links=1
@@ -2410,7 +2410,7 @@ function show_postgres_logs_macos() {
 		/opt/Homebrew/var/log/postgresql@"$WANTED_POSTGRES_VERSION".log \
 		/usr/local/var/log/postgresql@"$WANTED_POSTGRES_VERSION".log
 	do
-		[[ -f "$log" ]] || continue
+		[ -f "$log" ] || continue
 
 		log "Got postgres logfile at ${_color_GREEN}$log"
 		log "head:"
@@ -2424,7 +2424,7 @@ function show_postgres_storage_macos() {
 	local dir
 	for dir in /usr/local/var/postgres*/ /opt/homebrew/var/postgres*/
 	do
-		[[ -d "$dir" ]] || continue
+		[ -d "$dir" ] || continue
 
 		log "Found postgres folder: ${_color_GREEN}$dir"
 	done
@@ -2606,7 +2606,7 @@ function assert_num_file_lines() {
 	local min_lines="$2"
 	local max_lines="$3"
 	local file_lines
-	[[ -f "$filename" ]] || return
+	[ -f "$filename" ] || return
 
 	file_lines="$(wc -l "$filename" | awk '{ print $1 }')"
 	if [ "$file_lines" -lt "$min_lines" ]
@@ -2627,7 +2627,7 @@ function assert_num_dupe_lines() {
 	local filename="$1"
 	local max_dupes="$2"
 	local num_dupes=0
-	[[ -f "$filename" ]] || return
+	[ -f "$filename" ] || return
 
 	if uniq --help 2>&1 | grep -q -- '-D'
 	then
@@ -2685,7 +2685,7 @@ function underline_str() {
 
 function check_zshrc_plugins() {
 	local num_plugin_lists
-	[[ -f ~/.zshrc ]] || return
+	[ -f ~/.zshrc ] || return
 
 	num_plugin_lists="$(grep -c "^[[:space:]]*plugins=" ~/.zshrc)"
 	if [ "$num_plugin_lists" = "0" ]
@@ -2739,7 +2739,7 @@ function check_zshrc_plugins() {
 
 function check_zshrc_contents() {
 	dbg "checking zshrc ..."
-	[[ -f ~/.zshrc ]] || return
+	[ -f ~/.zshrc ] || return
 
 	assert_num_file_lines ~/.zshrc 60 110
 	assert_num_dupe_lines ~/.zshrc 6
@@ -2833,7 +2833,7 @@ function check_pyenv_in_zprofile() {
 
 function check_zprofile_contents() {
 	dbg "checking zprofile ..."
-	[[ -f ~/.zprofile ]] || return
+	[ -f ~/.zprofile ] || return
 
 	assert_num_file_lines ~/.zprofile 3 15
 	assert_num_dupe_lines ~/.zprofile 5
@@ -3007,7 +3007,7 @@ function check_disk_space() {
 	_is_warn_disk=0
 
 	_warn_disk() {
-		[[ "$_is_warn_disk" = "0" ]] && printf '\n'
+		[ "$_is_warn_disk" = "0" ] && printf '\n'
 		warn "Warning: failed to get free disk space"
 		_is_warn_disk=1
 	}
@@ -3046,7 +3046,7 @@ function check_disk_space() {
 		_warn_disk "Warning: failed to detect available disk space"
 	fi
 
-	[[ "$_is_warn_disk" = "0" ]] && dbg_echo " $avail${_color_GREEN} OK"
+	[ "$_is_warn_disk" = "0" ] && dbg_echo " $avail${_color_GREEN} OK"
 }
 
 function check_rvm() {
@@ -3224,7 +3224,7 @@ function cd_into_fullstack_challenges() {
 
 function check_git_branch_in_fullstack_challenges() {
 	cd_into_fullstack_challenges || return
-	[[ -d .git ]] || return
+	[ -d .git ] || return
 
 	local branch
 	if ! branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -3456,7 +3456,7 @@ function check_git_remote_in_fullstack_challenges() {
 
 function is_wanted_git_repo() {
 	local git_repo="$1"
-	[[ "$git_repo" = './.git' ]] && return 0
+	[ "$git_repo" = './.git' ] && return 0
 	[[ "$git_repo" = *05-Push-on-Github-Pages* ]] && return 0
 	return 1
 }
@@ -3494,7 +3494,7 @@ function check_git_init_in_fullstack_challenges() {
 		fi
 	done < <(find . -type d -name .git -print0)
 
-	[[ "$all_good" = "1" ]] && return
+	[ "$all_good" = "1" ] && return
 
 	if [ "$git_repos" != "" ]
 	then
@@ -3611,7 +3611,7 @@ function check_browser_env() {
 	)
 	for browser_path in "${browser_paths[@]}"
 	do
-		[[ -f "$browser_path" ]] || continue
+		[ -f "$browser_path" ] || continue
 
 		local exe
 		exe="${browser_path##*/}"
@@ -3627,7 +3627,7 @@ function check_browser_env() {
 function check_rubygems() {
 	dbg "checking rubygems.org ..."
 	# only check rubygems if ruby is installed
-	[[ -x "$(command -v ruby)" ]] || return
+	[ -x "$(command -v ruby)" ] || return
 
 	if curl -Lks 'https://git.io/rg-ssl' | ruby &>/dev/null
 	then
@@ -3666,10 +3666,10 @@ function check_rubygems() {
 function check_jupyter_config() {
 	dbg "checking jupyter config ..."
 	is_windows || return
-	[[ -x "$(command -v jupyter)" ]] || return
+	[ -x "$(command -v jupyter)" ] || return
 
 	local py_cfg="$HOME/.jupyter/jupyter_notebook_config.py"
-	if [[ ! -f "$py_cfg" ]]
+	if [ ! -f "$py_cfg" ]
 	then
 		warn "Warning: did not find jupyter config file $_color_red$py_cfg"
 		warn "         try running this command:"
@@ -3711,8 +3711,8 @@ function check_dotfiles_version() {
 	fi
 	cd "$dotfiles_dir"/dotfiles || { error "Error: something went wrong"; exit 1; }
 
-	[[ -x "$(command -v git)" ]] || return
-	if [[ ! -d .git ]]
+	[ -x "$(command -v git)" ] || return
+	if [ ! -d .git ]
 	then
 		warn "Warning: there is no .git folder in $_color_WHITE$PWD"
 		warn "         that is weird but might be okay if you know what you do"
@@ -3739,8 +3739,8 @@ function check_dotfiles_version() {
 
 function check_web_gh_webhook() {
 	dbg "checking github webhook ..."
-	[[ -x "$(command -v gh)" ]] || return
-	[[ -x "$(command -v jq)" ]] || return
+	[ -x "$(command -v gh)" ] || return
+	[ -x "$(command -v jq)" ] || return
 
 	local github_username
 	if ! github_username="$(get_gh_cli_username)"
@@ -3797,8 +3797,8 @@ function check_web_gh_webhook() {
 }
 
 function check_gh_email_public_and_matching() {
-	[[ -x "$(command -v gh)" ]] || return
-	[[ -x "$(command -v jq)" ]] || return
+	[ -x "$(command -v gh)" ] || return
+	[ -x "$(command -v jq)" ] || return
 	dbg "checking github email visibility ..."
 
 	local gh_status=''
@@ -3915,7 +3915,7 @@ function check_gh_email_public_and_matching() {
 
 function check_rubocop() {
 	dbg "checking rubocop ..."
-	[[ -x "$(command -v rubocop)" ]] || return
+	[ -x "$(command -v rubocop)" ] || return
 
 	# TODO: run 'rubocop -d' in the challenges repo
 	# 	then verify that the correct configs are loaded and no additonal ones
@@ -3946,7 +3946,7 @@ function _run_data_script() {
 		error ""
 		error "  ${_color_WHITE}$script_cmd"
 		error ""
-		[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+		[ -f "$tmp_log" ] && rm "$tmp_log"; return
 	fi
 	if grep -q '❌' "$tmp_log"
 	then
@@ -3956,7 +3956,7 @@ function _run_data_script() {
 		error ""
 		error "  ${_color_WHITE}$script_cmd"
 		error ""
-		[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+		[ -f "$tmp_log" ] && rm "$tmp_log"; return
 	fi
 	if ! grep -q '✅' "$tmp_log"
 	then
@@ -3968,7 +3968,7 @@ function _run_data_script() {
 		error ""
 		return
 	fi
-	[[ -f "$tmp_log" ]] && rm "$tmp_log"; return
+	[ -f "$tmp_log" ] && rm "$tmp_log"; return
 }
 
 function check_data_official_lewagon_checks() {
@@ -3983,7 +3983,7 @@ function check_data_official_lewagon_checks() {
 function check_conda() {
 	dbg "checking conda ..."
 
-	[[ ! -x "$(command -v conda)" ]] && return
+	[ ! -x "$(command -v conda)" ] && return
 
 	warn "Warning: found ${_color_RED}conda${_color_yellow} in your PATH"
 	warn "         Le Wagon recommends to use pyenv and it might conflict with conda"
@@ -3993,7 +3993,7 @@ function check_conda() {
 function check_pyenv_virtualenv() {
 	dbg "checking pyenv virtualenv ..."
 
-	[[ ! -x "$(command -v pyenv)" ]] && return
+	[ ! -x "$(command -v pyenv)" ] && return
 
 	local envs
 	if ! envs="$(pyenv virtualenvs)"
@@ -4020,7 +4020,7 @@ function check_ohmyzsh() {
 	#       check if there are custom plugins/themes/prompts or similar
 	#
 	#	it being loaded is already checked in the zshrc check
-	[[ -d ~/.oh-my-zsh ]] && return
+	[ -d ~/.oh-my-zsh ] && return
 
 	if ! sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 	then
@@ -4036,7 +4036,7 @@ function check_ohmyzsh() {
 function check_gems() {
 	dbg "checking gems ..."
 
-	[[ ! -x "$(command -v ruby)" ]] && return
+	[ ! -x "$(command -v ruby)" ] && return
 
 	local check_gems_script
 	read -r -d '' check_gems_script <<-'EOF'
