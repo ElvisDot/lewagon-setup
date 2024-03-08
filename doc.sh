@@ -2478,6 +2478,23 @@ function show_postgres_configs_macos() {
 	done
 }
 
+function show_postgres_pids_macos() {
+	local dir
+	for dir in /usr/local/var/postgres*/ /opt/homebrew/var/postgres*/
+	do
+		[ -d "$dir" ] || continue
+
+		local pid_file
+		for pid_file in "$dir"*.pid
+		do
+			[ -f "$pid_file" ] || continue
+
+			log "Found postgres pid:"
+			ls -lah "$pid_file"
+		done
+	done
+}
+
 function check_database() {
 	dbg "checking database ..."
 	# TODO: persist postgres start command on wsl in zshrc
@@ -2501,6 +2518,7 @@ function check_database() {
 			show_postgres_logs_macos
 			show_postgres_storage_macos
 			show_postgres_configs_macos
+			show_postgres_pids_macos
 		fi
 	fi
 }
