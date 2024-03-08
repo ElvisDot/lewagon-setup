@@ -2508,6 +2508,7 @@ function check_database() {
 	else
 		check_postgres_running_linux
 	fi
+	local posgres_unhealthy=0
 	if ! check_postgres_health || ! check_postgres_role || ! check_postgres_create_db
 	then
 		warn "Warning: your postgres is not healthy."
@@ -2516,6 +2517,10 @@ function check_database() {
 		warn ""
 		warn "           ${_color_WHITE}psql -lqt -U \"$(whoami)"\"
 		warn ""
+		posgres_unhealthy=1
+	fi
+	if [ "$arg_verbose" -gt 1 ] || [ "$posgres_unhealthy" = 1 ]
+	then
 		if is_mac
 		then
 			show_postgres_logs_macos
