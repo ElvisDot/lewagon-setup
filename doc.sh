@@ -63,7 +63,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings\nemmanuelbeziat.vsco
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1706674361
+LAST_DOC_UPDATE=1709869701
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2458,6 +2458,26 @@ function show_postgres_storage_macos() {
 	done
 }
 
+function show_postgres_configs_macos() {
+	local dir
+	for dir in /usr/local/var/postgres*/ /opt/homebrew/var/postgres*/
+	do
+		[ -d "$dir" ] || continue
+
+		local conf_file="$dir"postgresql.conf
+		[ -f "$conf_file" ] || continue
+
+		log "Found postgres config: $conf_file"
+		log "  Number of lines: $(wc -l "$conf_file")"
+		if [ "$arg_verbose" -gt 0 ]
+		then
+			local max_print_lines=20
+			log "  First $max_print_lines lines:"
+			head -n"$max_print_lines" "$conf_file"
+		fi
+	done
+}
+
 function check_database() {
 	dbg "checking database ..."
 	# TODO: persist postgres start command on wsl in zshrc
@@ -2480,6 +2500,7 @@ function check_database() {
 		then
 			show_postgres_logs_macos
 			show_postgres_storage_macos
+			show_postgres_configs_macos
 		fi
 	fi
 }
