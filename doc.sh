@@ -2469,11 +2469,11 @@ function show_postgres_configs_macos() {
 
 		log "Found postgres config: $conf_file"
 		log "  Number of lines: $(wc -l "$conf_file")"
-		if [ "$arg_verbose" -gt 0 ]
+		if [ "$arg_verbose" -gt 1 ]
 		then
 			local max_print_lines=20
 			log "  First $max_print_lines lines:"
-			head -n"$max_print_lines" "$conf_file"
+			awk NF "$conf_file" | grep -vE '^[[:space:]]*#' | head -n"$max_print_lines"
 		fi
 	done
 }
