@@ -2489,6 +2489,9 @@ function show_postgres_pids_macos() {
 		do
 			[ -f "$pid_file" ] || continue
 
+			# TODO: https://github.com/ElvisDot/lewagon-setup/issues/2
+			#	if it is save to delete that pid file that should be attempted
+			#	or suggested here
 			log "Found postgres pid:"
 			ls -lah "$pid_file"
 		done
