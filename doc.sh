@@ -63,7 +63,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings\nemmanuelbeziat.vsco
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1709869701
+LAST_DOC_UPDATE=1710430354
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2812,6 +2812,42 @@ function check_zshrc_plugins() {
 	fi
 }
 
+function check_zshrc_zsh_var() {
+	local num_sets
+	num_sets="$(grep -c '^ZSH=' ~/.zshrc)"
+	if [ "$num_sets" -gt 1 ]
+	then
+		warn "Warning: ZSH is set multiple times in your ~/.zshrc file"
+		warn ""
+		local zsh_line
+		while read -r zsh_line
+		do
+			warn "       $zsh_line"
+		done < <(grep -Hn '^ZSH=' ~/.zshrc)
+		warn ""
+	fi
+	# only when the dotfiles installer ran
+	# and sym linked it to the le wagon dotfiles
+	# we expect this variable to be set
+	if [ -L ~/.zshrc ]
+	then
+		if [ "$num_sets" -eq 0 ]
+		then
+			warn "Warning: ZSH is not set in your ~/.zshrc"
+		else
+			local zsh_value
+			zsh_value="$(grep '^ZSH=' ~/.zshrc | tail -n1 | cut -d= -f2-)"
+			# shellcheck disable=2016
+			if [ "$zsh_value" != '$HOME/.oh-my-zsh' ]
+			then
+				warn "Warning: ZSH is not set to the correct value in your ~/.zshrc"
+				warn "         expected: \$HOME/.oh-my-zsh"
+				warn "              got: $zsh_value"
+			fi
+		fi
+	fi
+}
+
 function check_zshrc_contents() {
 	dbg "checking zshrc ..."
 	[ -f ~/.zshrc ] || return
@@ -2819,6 +2855,7 @@ function check_zshrc_contents() {
 	assert_num_file_lines ~/.zshrc 60 110
 	assert_num_dupe_lines ~/.zshrc 6
 	check_zshrc_plugins
+	check_zshrc_zsh_var
 
 	# shellcheck disable=SC2016
 	if ! grep -qF 'source "${ZSH}/oh-my-zsh.sh"' ~/.zshrc
