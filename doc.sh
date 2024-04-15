@@ -4176,6 +4176,24 @@ function check_gems() {
 	fi
 }
 
+function check_brew_capstone() {
+	dbg "checking capstone ..."
+
+	is_mac || return
+	if ! brew list capstone | grep capstone &>/dev/null
+	then
+		return
+	fi
+
+	# https://github.com/rbenv/ruby-build/discussions/2347
+	warn "Warning: you have capstone installed. This might break the ruby build"
+	warn "         if you have trouble running this command $_color_WHITE rbenv install 3.1.2"
+	warn "         you can try uninstalling capstone."
+	warn ""
+	warn "  ${_color_WHITE}brew uninstall capstone"
+	warn ""
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4186,6 +4204,7 @@ function main() {
 		check_brew
 		check_mac_ports
 		check_sip_mac
+		check_brew_capstone
 	elif is_windows
 	then
 		check_windows_anti_virus
