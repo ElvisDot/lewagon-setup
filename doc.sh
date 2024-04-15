@@ -63,7 +63,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings\nemmanuelbeziat.vsco
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1710430354
+LAST_DOC_UPDATE=1713156794
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1731,11 +1731,13 @@ function run_dotfiles_install() {
 			error "Error: you are missing the dotfiles folder"
 			error "       follow those steps again"
 			error ""
-			if is_mac
+			local os_url='macOS'
+			is_windows && os_url='windows'
+			if is_data
 			then
-				error "       https://github.com/lewagon/setup/blob/master/macos.md#dotfiles-standard-configuration"
+				error "       https://github.com/lewagon/data-setup/blob/master/$os_url.md#dotfiles"
 			else
-				error "       https://github.com/lewagon/setup/blob/master/windows.md#dotfiles-standard-configuration"
+				error "       https://github.com/lewagon/setup/blob/master/$os_url.md#dotfiles-standard-configuration"
 			fi
 			error ""
 			exit 1
