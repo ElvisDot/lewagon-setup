@@ -4384,6 +4384,60 @@ function check_brew_capstone() {
 	warn ""
 }
 
+# shows a warning if the provided git path
+# is in state merging or rebasing
+function check_git_rebase() {
+	local git_dir="$1"
+	if [ "$git_dir" = "" ] || [ ! -d "$git_dir" ]
+	then
+		error "Error: invalid git dir '$git_dir'"
+		error "       this is an issue with the doctor please report it here"
+		error ""
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		exit 1
+	fi
+	if ! printf '%s' "$git_dir" | grep -q '\.git$'
+	then
+		error "Error: invalid git dir '$git_dir'"
+		error "       this is an issue with the doctor please report it here"
+		error ""
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		exit 1
+	fi
+
+	# https://repo.or.cz/w/git.git/blob/1e6f5b22ad318446500fbd3b94b733eddd5b6414:/contrib/completion/git-prompt.sh#l377
+	if [ -d "$git_dir"/rebase-merge/ ]
+	then
+		warn "Warning: git repo in state merging $_color_RED$git_dir"
+	fi
+	if [ -d "$git_dir"/rebase-apply/ ]
+	then
+		warn "Warning: git repo in state rebase $_color_RED$git_dir"
+	fi
+}
+
+function check_git_repos_merging() {
+	dbg "check git repos merging ..."
+
+	if is_web
+	then
+		cd_into_fullstack_challenges || return
+		check_git_rebase "$PWD/.git"
+	fi
+
+	local dotfiles_dir=''
+	dotfiles_dir="$(get_code_user_dir)"
+	if [ ! -d "$dotfiles_dir" ] || [ "$dotfiles_dir" == "" ]
+	then
+		return
+	fi
+	dotfiles_dir="$dotfiles_dir/dotfiles/.git"
+	if [ -d "$dotfiles_dir" ]
+	then
+		check_git_rebase "$dotfiles_dir"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4429,6 +4483,7 @@ function main() {
 	then
 		check_git_email_valid_regex
 	fi
+	check_git_repos_merging
 	check_zshrc_contents
 	check_zprofile_contents
 	check_c_compiler
