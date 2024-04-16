@@ -45,6 +45,7 @@ num_errors=0
 g_vscode_extensions_cache=''
 g_github_ssh_username=''
 g_github_cli_username=''
+g_github_cli_email=''
 g_gh_auth_status=''
 # g_ipv4_ok=0 # costs time to check and is not very interesting anyways
 g_ipv6_ok=0
@@ -1207,16 +1208,26 @@ function detect_bootcamp() {
 	log "Assuming $_color_YELLOW$bootcamp$_color_RESET bootcamp"
 }
 
+# cached github username lookup
+# based on gh cli authentication
+# (may differ for github ssh see 'get_gh_ssh_username')
+#
+# if github_username="$(get_gh_cli_username)"
+# then
+# 	log "logged in as $github_username"
+# fi
 function get_gh_cli_username() {
-	# cached github username lookup
-	# based on gh cli authentication
-	# (may differ for github ssh see 'get_gh_ssh_username')
 	[ -x "$(command -v gh)" ] || return 1
 	[ -x "$(command -v jq)" ] || return 1
 
 	if [ "$g_github_cli_username" = null ]
 	then
 		return 1
+	fi
+	if [ "$g_github_cli_username" != "" ]
+	then
+		printf '%s' "$g_github_cli_username"
+		return 0
 	fi
 	if ! g_github_cli_username="$(gh api user | jq -r .login)"
 	then
@@ -1228,7 +1239,7 @@ function get_gh_cli_username() {
 		g_github_cli_username=null
 		return 1
 	fi
-	echo "$g_github_cli_username"
+	printf '%s' "$g_github_cli_username"
 	return 0
 }
 
@@ -2611,6 +2622,8 @@ function check_github_name_matches() {
 }
 
 function check_ready_commit_email() {
+	dbg "check ready commit email ..."
+
 	# Kitt is waiting for the student
 	# to push a commit with the correct email
 	# set in the fullstack-challenges repo
@@ -2628,8 +2641,7 @@ function check_ready_commit_email() {
 		return
 	fi
 	cd "$challenges_dir" || return
-	github_email="$(gh api user | jq -r '.email')"
-	if [ "$github_email" = "null" ]
+	if ! github_email="$(gh_email_primary)"
 	then
 		# email is private no need to compare
 		# TODO: find a way to get email anyways
@@ -3920,6 +3932,54 @@ function check_web_gh_webhook() {
 	fi
 }
 
+# if ! gh_email="$(gh api user/emails | jq '.[] | select(.primary==true) | .email' -r)"
+# then
+# 	log "got github cli email $gh_email"
+# fi
+function gh_email_primary() {
+	if [ "$g_github_cli_email" = null ]
+	then
+		return 1
+	fi
+	if [ "$g_github_cli_email" != "" ]
+	then
+		printf '%s' "$g_github_cli_email"
+		return 0
+	fi
+
+	local scopes
+	scopes="$(get_gh_scopes)" || return 1
+	if ! printf '%s' "$scopes" | grep -q ' user:email'
+	then
+		return 1
+	fi
+
+	if ! g_github_cli_email="$(gh api user/emails | jq '.[] | select(.primary==true) | .email' -r)"
+	then
+		g_github_cli_email=null
+		return 1
+	fi
+	if [ "$g_github_cli_email" = "" ]
+	then
+		g_github_cli_email=null
+		return 1
+	fi
+	printf '%s' "$g_github_cli_email"
+	return 0
+}
+
+function get_gh_scopes() {
+	local gh_status=''
+	if ! gh_status="$(gh_auth_status)"
+	then
+		return 1
+	fi
+	if ! printf '%s' "$gh_status" | grep -o 'Token scopes:.*' | cut -d':' -f2-
+	then
+		exit 1
+	fi
+}
+
 function check_gh_email_public_and_matching() {
 	[ -x "$(command -v gh)" ] || return
 	[ -x "$(command -v jq)" ] || return
@@ -3931,7 +3991,7 @@ function check_gh_email_public_and_matching() {
 		return
 	fi
 	local scopes
-	if ! scopes="$(echo "$gh_status" | grep -o 'Token scopes:.*' | cut -d':' -f2-)"
+	if ! scopes="$(get_gh_scopes)"
 	then
 		error "Error: failed to get github cli scopes"
 		error "       this is likley an issue with the doctor it self"
@@ -3953,7 +4013,7 @@ function check_gh_email_public_and_matching() {
 	fi
 	local gh_email
 	local gh_visibility
-	if ! gh_email="$(gh api user/emails | jq '.[] | select(.primary==true) | .email' -r)"
+	if ! gh_email="$(gh_email_primary)"
 	then
 		warn "Warning: failed to get github cli primary email"
 		warn "         this is likley an issue with the doctor it self"
@@ -4037,6 +4097,38 @@ function check_gh_email_public_and_matching() {
 	fi
 }
 
+# uses heuristics to assume the correct email
+# trying to avoid false positives when the student has multiple github accounts
+#
+# if email="$(guess_git_email_or_empty)"
+# then
+#   log "the doctor assumes your git email should be $email"
+# fi
+function guess_git_email_or_empty() {
+	local ssh_username
+	local cli_username
+	if ! ssh_username="$(get_gh_ssh_username)"
+	then
+		return 1
+	fi
+	if cli_username="$(get_gh_cli_username)"
+	then
+		return 1
+	fi
+	# if there are two accounts on the system
+	# do not assume which one is correct
+	[ "$ssh_username" = "$cli_username" ] || return 1
+
+	local gh_email
+	if ! gh_email="$(gh_email_primary)"
+	then
+		return 1
+	fi
+
+	printf '%s' "$gh_email"
+	return 0
+}
+
 # prints a warning and throws a non zero return code
 # if the git config user.email is not set
 #
@@ -4091,13 +4183,19 @@ function check_git_email_valid_regex() {
 
 	[ "$git_email" = "" ] && return
 
+	local suggested_email
+	if ! suggested_email="$(guess_git_email_or_empty)"
+	then
+		suggested_email=YOUR_EMAIL
+	fi
+
 	if ! printf '%s' "$git_email" | grep -Eq '.+@.+'
 	then
 		warn "Warning: your git email does not contain an @ sign"
 		warn "         your currently set git email is: ${_color_RED}$git_email"
 		warn "         is that the email you used for github? If not you can update it with"
 		warn ""
-		warn "  ${_color_WHITE}git config --global user.email YOUR_EMAIL"
+		warn "  ${_color_WHITE}git config --global user.email $suggested_email"
 		warn ""
 	fi
 }
