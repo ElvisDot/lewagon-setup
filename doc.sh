@@ -4198,6 +4198,16 @@ function check_git_email_valid_regex() {
 		warn "  ${_color_WHITE}git config --global user.email $suggested_email"
 		warn ""
 	fi
+
+	if printf '%s' "$git_email" | grep -Eq 'example.com'
+	then
+		warn "Warning: your git email does contain ${_color_RED}example.com"
+		warn "         your currently set git email is: ${_color_RED}$git_email"
+		warn "         is that the email you used for github? If not you can update it with"
+		warn ""
+		warn "  ${_color_WHITE}git config --global user.email $suggested_email"
+		warn ""
+	fi
 }
 
 function check_rubocop() {
