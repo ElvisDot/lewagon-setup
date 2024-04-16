@@ -365,6 +365,7 @@ function check_http() {
 function check_ssl() {
 	local host
 	local hosts=(https://github.com https://lewagon.com https://google.com)
+	local failed=0
 	for host in "${hosts[@]}"
 	do
 		log -n "testing https connection to $_color_WHITE$host$_color_RESET"
@@ -373,9 +374,10 @@ function check_ssl() {
 			echo -e "$_color_GREEN\tOK"
 		else
 			echo -e "$_color_RED\tFAILED"
+			failed=1
 		fi
 	done
-	warn "Warning: Could not establish SSL connection!"
+	[ "$failed" = 1 ] && warn "Warning: Could not establish SSL connection!"
 }
 
 function fail_if_no_internet() {
