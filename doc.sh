@@ -1232,10 +1232,15 @@ function get_gh_cli_username() {
 	return 0
 }
 
+# cached github username lookup
+# based on ssh authentication
+# (may differ for gh cli see 'get_gh_cli_username')
+#
+# if github_username="$(get_gh_ssh_username)"
+# then
+# 	log "logged in as $github_username"
+# fi
 function get_gh_ssh_username() {
-	# cached github username lookup
-	# based on ssh authentication
-	# (may differ for gh cli see 'get_gh_cli_username')
 	if [ "$g_github_ssh_username" = null ]
 	then
 		return 1
@@ -1274,10 +1279,15 @@ function get_gh_ssh_username() {
 	return 0
 }
 
+# cached auth status
+# prints empty string and returns 1 if not authed
+# prints the output of "gh auth status" otherwise
+#
+# if ! gh_auth_status > /dev/null
+# then
+# 	error "Error: not logged in"
+# fi
 function gh_auth_status() {
-	# cached auth status
-	# prints empty string and returns 1 if not authed
-	# prints the output of "gh auth status" otherwise
 	if [ "$g_gh_auth_status" = "false" ]
 	then
 		return 1
