@@ -4338,7 +4338,7 @@ function check_gems() {
 	[ ! -x "$(command -v ruby)" ] && return
 
 	local check_gems_script
-	read -r -d '' check_gems_script <<-'EOF'
+	read -r -d '' check_gems_script <<-EOF
 	REQUIRED_GEMS = %w[colored faker http pry-byebug rake rails rest-client rspec rubocop-performance sqlite3]
 	MINIMUM_AVATAR_SIZE = 2 * 1024
 
@@ -4346,18 +4346,23 @@ function check_gems() {
 	  begin
 	    require the_gem
 	  rescue LoadError
-	    puts "⚠️  The gem '#{the_gem}' is missing."
-
-	    puts "1️⃣ Please run `gem uninstall -qxaI #{REQUIRED_GEMS.join(" ")}`"
-	    puts "2️⃣ Then run `gem install #{REQUIRED_GEMS.join(" ")}`"
-	    puts "3️⃣ Then retry this check!"
+	    puts "         The gem '${_color_YELLOW}#{the_gem}${_color_yellow}' is missing."
+	    puts "         To fix it run this command"
+	    puts ""
+	    puts "  ${_color_WHITE}gem install #{REQUIRED_GEMS.join(" ")}"
 	    exit 1
 	  end
 	end
 	EOF
-	if ! ruby -e "$check_gems_script"
+	local missing_gems_lines
+	if ! missing_gems_lines="$(ruby -e "$check_gems_script")"
 	then
 		warn "Warning: missing gems"
+		printf '%b\n' "$missing_gems_lines" | while IFS='' read -r line
+		do
+			warn "$line"
+		done
+		warn ""
 	fi
 }
 
