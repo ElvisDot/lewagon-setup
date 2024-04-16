@@ -63,7 +63,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings\nemmanuelbeziat.vsco
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1713156794
+LAST_DOC_UPDATE=1713227505
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -4027,6 +4027,71 @@ function check_gh_email_public_and_matching() {
 	fi
 }
 
+# prints a warning and throws a non zero return code
+# if the git config user.email is not set
+#
+# if ! check_git_email_set
+# then
+#   error "Error: email not set"
+# fi
+function check_git_email_set() {
+	dbg "checking git email set ..."
+	# do not warn about unset emails if the user is not logged in yet
+	# otherwise this will always show when the setup is currently in progress
+	if ! gh_auth_status > /dev/null
+	then
+		return 0
+	fi
+
+	local git_email
+	if ! git_email="$(git config --global user.email)"
+	then
+		warn "Warning: failed to get git email"
+		warn "         this is likley an issue with the doctor it self"
+		warn "         please report it here"
+		warn ""
+		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
+		warn ""
+		return 0
+	fi
+
+	if [ "$git_email" = "" ]
+	then
+		warn "Warning: there is no git email set yet"
+		return 1
+	fi
+
+	return 0
+}
+
+function check_git_email_valid_regex() {
+	dbg "checking git email valid ..."
+
+	local git_email
+	if ! git_email="$(git config --global user.email)"
+	then
+		warn "Warning: failed to get git email"
+		warn "         this is likley an issue with the doctor it self"
+		warn "         please report it here"
+		warn ""
+		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
+		warn ""
+		return 1
+	fi
+
+	[ "$git_email" = "" ] && return
+
+	if ! printf '%s' "$git_email" | grep -Eq '.+@.+'
+	then
+		warn "Warning: your git email does not contain an @ sign"
+		warn "         your currently set git email is: ${_color_RED}$git_email"
+		warn "         is that the email you used for github? If not you can update it with"
+		warn ""
+		warn "  ${_color_WHITE}git config --global user.email YOUR_EMAIL"
+		warn ""
+	fi
+}
+
 function check_rubocop() {
 	dbg "checking rubocop ..."
 	[ -x "$(command -v rubocop)" ] || return
@@ -4235,6 +4300,10 @@ function main() {
 		fi
 	fi
 	check_gh_email_public_and_matching
+	if check_git_email_set
+	then
+		check_git_email_valid_regex
+	fi
 	check_zshrc_contents
 	check_zprofile_contents
 	check_c_compiler
