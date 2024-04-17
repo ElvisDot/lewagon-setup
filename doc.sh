@@ -1201,6 +1201,10 @@ function detect_bootcamp() {
 	then
 		bootcamp=data
 	fi
+	if [ -f ~/.zshrc ] && grep -q direnv ~/.zshrc
+	then
+		bootcamp=data
+	fi
 	if [ -x "$(command -v code)" ] && [ "$is_vscode_healthy" = "1" ]
 	then
 		if list_vscode_extensions | grep -q ruby
