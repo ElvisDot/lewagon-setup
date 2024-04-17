@@ -17,7 +17,7 @@ _color_red="\e[0;31m"
 _color_green="\e[0;32m"
 _color_yellow="\e[0;33m"
 # _color_blue="\e[0;34m"
-# _color_magenta="\e[0;35m"
+_color_magenta="\e[0;35m"
 # _color_cyan="\e[0;36m"
 # _color_white="\e[0;37m"
 
@@ -4454,6 +4454,25 @@ function check_git_repos_merging() {
 	fi
 }
 
+function check_linux_clock() {
+	dbg "checking linux clock ..."
+
+	is_mac && return
+	[ -x "$(command -v timedatectl)" ] || return
+
+	if ! timedatectl | grep -q 'NTP service: active'
+	then
+		warn "Warning: your NTP service is not active."
+		warn "         This might not be an issue if your clock is running correctly"
+		warn "         but if your clock is out of sync too much you might get some"
+		warn "         certificate not valid yet errors."
+		warn ""
+		warn "         is this date correct?"
+		warn "         $_color_magenta$(date)"
+		warn ""
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4506,6 +4525,7 @@ function main() {
 	check_locale
 	check_browser_env
 	check_ohmyzsh
+	check_linux_clock
 	if is_web
 	then
 		check_vscode_extensions_web
