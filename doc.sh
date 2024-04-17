@@ -2909,6 +2909,27 @@ function check_zshrc_contents() {
 		warn "Warning: oh-my-zsh is not loaded in your ~/.zshrc"
 	fi
 
+	if is_data
+	then
+		# shellcheck disable=2016
+		if ! grep -qF 'eval "$(direnv hook zsh)"' ~/.zshrc
+		then
+			if [ "$arg_fix" = "1" ]
+			then
+				log "adding direnv zsh hook to zshrc ..."
+				echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+			else
+				warn "Warning: missing direnv hook in your zshrc"
+				warn "         run the following command to fix it"
+				warn ""
+				warn "  ${_color_WHITE}echo 'eval \"\$(direnv hook zsh)\"' >> ~/.zshrc"
+				warn ""
+				warn "         or run the doctor with $_color_WHITE--fix"
+				warn ""
+			fi
+		fi
+	fi
+
 	if is_web
 	then
 		# shellcheck disable=SC2016
