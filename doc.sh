@@ -2119,7 +2119,10 @@ function check_package_manager_programs() {
 		do
 			[[ -x "$(command -v "$prog")" ]] || programs+=("$prog")
 		done
-		# todo: check readline
+		if ! brew list readline | grep readline &>/dev/null
+		then
+			programs+=("readline")
+		fi
 	else # linux/windows
 		for prog in unzip vim zsh
 		do
@@ -4339,6 +4342,43 @@ function check_pyenv_installed() {
 	git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 }
 
+function check_python_build_deps() {
+	dbg "checking python build dependencies ..."
+
+	is_ubuntu || return
+
+	local installed_packages
+	local wanted_packages
+	local num_wanted_packages
+
+	installed_packages="$(apt-cache search . | cut -d' ' -f1)"
+	wanted_packages="make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev"
+	wanted_packages="$wanted_packages wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev python3-dev"
+	num_wanted_packages="$(printf '%s' "$wanted_packages" | grep -o . | grep -c ' ')"
+
+	local i=0
+	local missing=0
+	while [ "$i" -le "$num_wanted_packages" ]
+	do
+		i="$((i + 1))"
+		wanted_package="$(printf '%s' "$wanted_packages" | cut -d' ' -f"$i")"
+
+		if ! printf '%s\n' "$installed_packages" | grep -qxF "$wanted_package"
+		then
+			missing=1
+			break
+		fi
+	done
+
+	[ "$missing" = "0" ] && return
+
+	log "Installing missing apt packages to build python ..."
+
+	sudo apt-get update
+	# shellcheck disable=SC2086
+	sudo apt-get install -y $wanted_packages
+}
+
 function check_pyenv_virtualenv() {
 	dbg "checking pyenv virtualenv ..."
 
@@ -4583,6 +4623,7 @@ function main() {
 		check_conda
 		check_data_official_lewagon_checks
 		check_pyenv_installed
+		check_python_build_deps
 		check_pyenv_virtualenv
 	fi
 	if [ "$num_errors" = "0" ] && [ "$num_warnings" = "0" ]
