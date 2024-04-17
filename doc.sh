@@ -4330,6 +4330,15 @@ function check_conda() {
 	warn "         If you know what you are doing this is fine"
 }
 
+function check_pyenv_installed() {
+	dbg "checking pyenv installed ..."
+
+	[ -d ~/.pyenv ] && return
+
+	log "installing pyenv ..."
+	git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+}
+
 function check_pyenv_virtualenv() {
 	dbg "checking pyenv virtualenv ..."
 
@@ -4573,6 +4582,7 @@ function main() {
 		check_jupyter_config
 		check_conda
 		check_data_official_lewagon_checks
+		check_pyenv_installed
 		check_pyenv_virtualenv
 	fi
 	if [ "$num_errors" = "0" ] && [ "$num_warnings" = "0" ]
