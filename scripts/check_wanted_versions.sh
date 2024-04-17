@@ -9,8 +9,8 @@ function check_match() {
 	if [ "$wanted" != "$latest" ]
 	then
 		echo "$name version missmatch:"
-		echo "  wanted: $wanted"
-		echo "  latest: $latest"
+		echo "  wanted: '$wanted'"
+		echo "  latest: '$latest'"
 		exit 1
 	fi
 }
@@ -40,7 +40,7 @@ latest_gems="$(curl -s https://raw.githubusercontent.com/lewagon/setup/master/ch
 check_match gems "$WANTED_GEMS" "$latest_gems"
 
 WANTED_EXT_WEB="$(grep '^WANTED_VSCODE_EXTENSIONS_WEB=' doc.sh | cut -d'"' -f2)"
-latest_ext_web="$(curl -s 'https://raw.githubusercontent.com/lewagon/setup/master/macos.md' | grep '^code --install-extension ' | cut -d' ' -f3 | sed ':a;N;$!ba;s/\n/\\n/g')"
+latest_ext_web="$(curl -s 'https://raw.githubusercontent.com/lewagon/setup/master/macos.md' | grep '^code --install-extension ' | cut -d' ' -f3 | tr '\n' ' ' | rev | cut -c 2- | rev)"
 check_match 'vscode extensions (web)' "$WANTED_EXT_WEB" "$latest_ext_web"
 
 function check_readme() {

@@ -60,11 +60,11 @@ WANTED_RUBY_VERSION='3.1.2'
 WANTED_PYTHON_VERSION='3.10.6'
 WANTED_DOTFILES_SHA='adf05d5bffffc08ad040fb9c491ebea0350a5ba2'
 # bash arrays would be nicer code but spaced strings are POSIX
-WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings\nemmanuelbeziat.vscode-great-icons\ngithub.github-vscode-theme\nMS-vsliveshare.vsliveshare\nrebornix.ruby\ndbaeumer.vscode-eslint\nRubymaniac.vscode-paste-and-indent\nalexcvzz.vscode-sqlite\nanteprimorac.html-end-tag-labels"
+WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscode-great-icons github.github-vscode-theme MS-vsliveshare.vsliveshare rebornix.ruby dbaeumer.vscode-eslint Rubymaniac.vscode-paste-and-indent alexcvzz.vscode-sqlite anteprimorac.html-end-tag-labels"
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1713227505
+LAST_DOC_UPDATE=1713316425
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1153,11 +1153,27 @@ function check_vscode_extensions_web() {
 
 	[ -x "$(command -v code)" ] || return
 
+	local vscode_extensions="$WANTED_VSCODE_EXTENSIONS_WEB"
+	is_windows && vscode_extensions="$vscode_extensions ms-vscode-remote.remote-wsl"
+
+	local num_extensions
+	if ! num_extensions="$(printf '%s' "$vscode_extensions" | grep -o . | grep -c ' ')"
+	then
+		error "Error: failed to get number of vscode extensions"
+		error "       this is likley an issue with the doctor it self"
+		error "       please report it here"
+		error ""
+		error "       https://github.com/ElvisDot/lewagon-setup/issues"
+		error ""
+		exit 1
+	fi
+
+	local i=0
 	local ext
-	local win_ext=''
-	is_windows && win_ext='ms-vscode-remote.remote-wsl'
-	printf '%b\n' "$WANTED_VSCODE_EXTENSIONS_WEB\n$win_ext" | while IFS='' read -r ext 
+	while [ "$i" -le "$num_extensions" ]
 	do
+		i="$((i+1))"
+		ext="$(printf '%s' "$vscode_extensions" | cut -d' ' -f"$i")"
 		[ "$ext" = "" ] && continue
 
 		# not sure if extensions are case sensitive
