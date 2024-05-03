@@ -1467,7 +1467,7 @@ function semver_ge() {
 	do
 		if ! echo "$v" | grep -qE '^([0-9]+)\.([0-9+])\.([0-9]+)'
 		then
-			warn "Warning: failed to compare $comment version. '$_color_RED$v$_color_YELLOW' is not a valid version number."
+			warn "Warning: failed to compare $comment version. '$_color_RED$v$_color_yellow' is not a valid version number."
 			warn "         this is an issue with the doctor please report it here"
 			warn ""
 			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
@@ -1514,8 +1514,8 @@ function is_outdated_ruby() {
 
 	# if we are the wanted version we are good
 	# but also if we are more recent than the wanted version we are good
-	semver_ge "$ruby_version" "$(wanted_ruby_version)" ruby && return 0
-	return 1
+	semver_ge "$ruby_vers" "$(wanted_ruby_version)" ruby && return 1
+	return 0
 }
 
 function check_brew_in_path_after_rbenv_init() {
