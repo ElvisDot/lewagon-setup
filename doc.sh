@@ -4622,21 +4622,21 @@ function check_rubygems_version() {
 }
 
 function activerecord_connect_sqlite3() {
-	ruby -e '
-	require "active_record"
-	require "sqlite3"
-	ActiveRecord::Base.configurations = {"development"=>{"adapter"=>"sqlite3", "database"=>"/tmp/doctor_test.sqlite3"}}
+	ruby -e "
+	require 'active_record'
+	require 'sqlite3'
+	ActiveRecord::Base.configurations = {'development'=>{'adapter'=>'sqlite3', 'database'=>'/tmp/doctor_test_${USER}.sqlite3'}}
 	ActiveRecord::Base.establish_connection(:development)
-	'
+	"
 }
 function activerecord_connect_sqlite3_v1() {
-	ruby -e '
-	require "active_record"
-	gem "sqlite3", "~> 1.0"
-	require "sqlite3"
-	ActiveRecord::Base.configurations = {"development"=>{"adapter"=>"sqlite3", "database"=>"/tmp/doctor_test.sqlite3"}}
+	ruby -e "
+	require 'active_record'
+	gem 'sqlite3', '~> 1.0'
+	require 'sqlite3'
+	ActiveRecord::Base.configurations = {'development'=>{'adapter'=>'sqlite3', 'database'=>'/tmp/doctor_test_${USER}.sqlite3'}}
 	ActiveRecord::Base.establish_connection(:development)
-	'
+	"
 }
 
 # returns the first full semantic version of the installed sqlite3 gem
