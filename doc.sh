@@ -52,6 +52,7 @@ g_ipv6_ok=0
 
 MIN_DISK_SPACE_GB=10
 
+WANTED_RUBYGEMS_VERSION=3.5.9
 WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
@@ -64,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1713316425
+LAST_DOC_UPDATE=1714710963
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1437,6 +1438,65 @@ function install_rbenv() {
 	exit 1
 }
 
+# @param version1
+# @param version2
+# @param comment used for error messages
+#
+# @returns true if version1 >= version2
+#
+# @example
+#
+# if semver_ge "1.2.3" "2.0.0" foo
+# then
+# 	# unreachable code
+# 	echo "1.2.3 is greater than 2.0.0"
+# fi
+#
+# if semver_ge "2.2.3" "2.0.0" foo
+# then
+# 	# reachable code
+# 	echo "2.2.3 is greater than 2.0.0"
+# fi
+function semver_ge() {
+	local version1="$1"
+	local version2="$2"
+	local comment="$3"
+
+	local v
+	for v in "$version1" "$version2"
+	do
+		if ! echo "$v" | grep -qE '^([0-9]+)\.([0-9+])\.([0-9]+)'
+		then
+			warn "Warning: failed to compare $comment version. '$_color_RED$v$_color_YELLOW' is not a valid version number."
+			warn "         this is an issue with the doctor please report it here"
+			warn ""
+			warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+			return 1
+		fi
+	done
+
+	# macOS:
+	# Usage: sort [-bcCdfigMmnrsuz] [-kPOS1[,POS2] ... ] [+POS1 [-POS2]] [-S memsize] [-T tmpdir] [-t separator] [-o outfile] [--batch-size size] [--files0-from file] [--heapsort] [--mergesort] [--radixsort] [--qsort] [--mmap] [--parallel thread_no] [--human-numeric-sort] [--version-sort] [--random-sort [--random-source file]] [--compress-program program] [file ...]
+
+	if ! sort --help | grep -qE -- "([[:space:]]-V[^a-z]|--version-sort)"
+	then
+		warn "Warning: failed to check $comment version (sort -V not supported)"
+		warn "         this is an issue with the doctor please report it here"
+		warn ""
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return 1
+	fi
+
+	local latest
+	# get latest version of the list "current" and "wanted"
+	# sort -V supports semantic versioning sort
+	# using tail -n1 we get the latest
+	latest="$(printf '%s\n%s\n' "$version2" "$version1" | sort -V | tail -n1)"
+
+	[[ "$version1" != "$latest" ]] && return 1
+	return 0
+}
+
 function is_outdated_ruby() {
 	local ruby_vers
 	ruby_vers="$(ruby -e "puts RUBY_VERSION" 2>/dev/null)"
@@ -1452,27 +1512,9 @@ function is_outdated_ruby() {
 		return 1
 	fi
 
-	# macOS:
-	# Usage: sort [-bcCdfigMmnrsuz] [-kPOS1[,POS2] ... ] [+POS1 [-POS2]] [-S memsize] [-T tmpdir] [-t separator] [-o outfile] [--batch-size size] [--files0-from file] [--heapsort] [--mergesort] [--radixsort] [--qsort] [--mmap] [--parallel thread_no] [--human-numeric-sort] [--version-sort] [--random-sort [--random-source file]] [--compress-program program] [file ...]
-
-	if ! sort --help | grep -qE -- "([[:space:]]-V[^a-z]|--version-sort)"
-	then
-		warn "Warning: failed to check ruby version (sort -V not supported)"
-		warn "         this is an issue with the doctor please report it here"
-		warn ""
-		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
-		return 1
-	fi
-
-	local latest
-	# get latest version of the list "current" and "wanted"
-	# sort -V supports semantic versioning sort
-	# using tail -n1 we get the latest
-	latest="$(printf '%s\n%s\n' "$(wanted_ruby_version)" "$ruby_vers" | sort -V | tail -n1)"
-
 	# if we are the wanted version we are good
 	# but also if we are more recent than the wanted version we are good
-	[[ "$ruby_vers" != "$latest" ]] && return 0
+	semver_ge "$ruby_version" "$(wanted_ruby_version)" ruby && return 0
 	return 1
 }
 
@@ -4547,6 +4589,38 @@ function check_linux_clock() {
 	fi
 }
 
+function check_rubygems_version() {
+	dbg "checking rubygems version ..."
+
+	# only update rubygems if it is installed with rbenv
+	# do not mess with any other system
+	if [[ ! "$(command -v ruby)" =~ shims ]]
+	then
+		return
+	fi
+
+	local gem_version
+	if ! gem_version="$(gem --version)"
+	then
+		warn "Warning: failed to get rubygems version"
+		return
+	fi
+
+	# if we are the wanted version we are good
+	# but also if we are more recent than the wanted version we are good
+	if semver_ge "$gem_version" "$WANTED_RUBYGEMS_VERSION" rubygems
+	then
+		dbg "got rubygems version $_color_GREEN$gem_version"
+		return
+	fi
+
+	log "found outdated rubygems version $_color_yellow$gem_version$_color_RESET updating ..."
+	if ! gem update --system
+	then
+		warn "Warning: failed to update rubygems"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4604,6 +4678,7 @@ function main() {
 	then
 		check_vscode_extensions_web
 		check_ruby
+		check_rubygems_version
 		check_rvm
 		check_asdf_ruby
 		check_rails_version
