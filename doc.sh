@@ -4502,7 +4502,7 @@ function check_brew_capstone() {
 	dbg "checking capstone ..."
 
 	is_mac || return
-	if ! brew list capstone | grep capstone &>/dev/null
+	if ! brew list capstone 2>/dev/null | grep capstone &>/dev/null
 	then
 		return
 	fi
