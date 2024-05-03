@@ -4621,6 +4621,75 @@ function check_rubygems_version() {
 	fi
 }
 
+function activerecord_connect_sqlite3() {
+	ruby -e '
+	require "active_record"
+	require "sqlite3"
+	ActiveRecord::Base.configurations = {"development"=>{"adapter"=>"sqlite3", "database"=>"/tmp/doctor_test.sqlite3"}}
+	ActiveRecord::Base.establish_connection(:development)
+	'
+}
+function activerecord_connect_sqlite3_v1() {
+	ruby -e '
+	require "active_record"
+	gem "sqlite3", "~> 1.0"
+	require "sqlite3"
+	ActiveRecord::Base.configurations = {"development"=>{"adapter"=>"sqlite3", "database"=>"/tmp/doctor_test.sqlite3"}}
+	ActiveRecord::Base.establish_connection(:development)
+	'
+}
+
+# returns the first full semantic version of the installed sqlite3 gem
+# only looking at version 2.x.x
+#
+# for example: 2.0.0
+#
+function sqlite3_gem_v2() {
+	gem list sqlite3 | grep -oE '[^0-9]2\.[0-9]+\.[0-9]' | cut -c2- | head -n1
+}
+
+function check_activerecord() {
+	dbg "checking activerecord ..."
+	if ! activerecord_connect_sqlite3 &>/dev/null
+	then
+		if [ "$arg_verbose" -gt 0 ]
+		then
+			activerecord_connect_sqlite3
+		fi
+		# the v1 error is not interesting
+		if activerecord_connect_sqlite3_v1
+		then
+			local sqlite3_version
+			if sqlite3_version="$(sqlite3_gem_v2)"
+			then
+				if [ "$sqlite3_version" != "" ]
+				then
+					# TODO: remove this pyramid of death as soon as active record works with sqlite3 v2
+					if [ "$arg_fix" = 1 ]
+					then
+						log "uninstalling sqlite3 version $sqlite3_version which breaks activerecord ..."
+						gem uninstall sqlite3 --version "$sqlite3_version"
+					else
+						warn "Warning: failed to use activerecord with sqlite3"
+						warn "         but using it with sqlite3 version 1.x.x works"
+						warn "         try uninstalling sqlite3 $_color_RED$sqlite3_version$_color_yellow"
+						warn "         which seems to be incompatible with activerecord"
+						warn ""
+						warn "  ${_color_WHITE}gem uninstall sqlite3 --version $sqlite3_version"
+						warn ""
+						warn ""
+						warn "         or run the doctor with $_color_WHITE--fix"
+						warn ""
+					fi
+					return
+				fi
+			fi
+		fi
+		warn "Warning: failed to use activerecord with sqlite3"
+		warn "         try updating and or uninstalling all versions of activerecord and sqlite3"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4679,6 +4748,7 @@ function main() {
 		check_vscode_extensions_web
 		check_ruby
 		check_rubygems_version
+		check_activerecord
 		check_rvm
 		check_asdf_ruby
 		check_rails_version
