@@ -65,11 +65,13 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1714710963
+LAST_DOC_UPDATE=1716467038
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
 is_vscode_healthy=0
+
+export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
 
 if [ "${BASH_VERSINFO:-0}" -lt 3 ]
 then
@@ -1285,7 +1287,7 @@ function get_gh_ssh_username() {
 		return 0
 	fi
 	local ssh_t_github
-	ssh_t_github="$(ssh -T git@github.com 2>&1)"
+	ssh_t_github="$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T git@github.com 2>&1)"
 	if [ "$?" != "1" ]
 	then
 		warn "Warning: failed to get github username" 1>&2
@@ -1293,7 +1295,7 @@ function get_gh_ssh_username() {
 		g_github_ssh_username=null
 		return 1
 	fi
-	g_github_ssh_username="$(echo "$ssh_t_github" | cut -d' ' -f2 | cut -d'!' -f1)"
+	g_github_ssh_username="$(echo "$ssh_t_github" | cut -d' ' -f2 | cut -d'!' -f1 | tail -n1)"
 	# the regex is the nicer solution but the capture group causes a
 	# syntax issue on bash 3
 	# if [[ "$(ssh -T git@github.com 2>&1)" =~ Hi\ (.*)! ]]
