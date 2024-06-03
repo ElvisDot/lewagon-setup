@@ -52,7 +52,7 @@ g_ipv6_ok=0
 
 MIN_DISK_SPACE_GB=10
 
-WANTED_RUBYGEMS_VERSION=3.5.9
+WANTED_RUBYGEMS_VERSION=3.3.7
 WANTED_RAILS_MAJOR_VERSION=7
 WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1716467038
+LAST_DOC_UPDATE=1717433723
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -4616,11 +4616,22 @@ function check_rubygems_version() {
 		return
 	fi
 
-	log "found outdated rubygems version $_color_yellow$gem_version$_color_RESET updating ..."
-	if ! gem update --system
+	if [ "$gem_version" = 3.5.11 ]
 	then
-		warn "Warning: failed to update rubygems"
+		warn "Warning: rubygems version ${_color_red}3.5.11$_color_yellow installed."
+		warn "         this version is known to cause issues with heroku"
+		warn "         If you heroku deployment fails you can try downgrading and then delete your Gemfile.lock"
+		warn ""
+		warn "  ${_color_WHITE}gem update --system $WANTED_RUBYGEMS_VERSION"
+		warn ""
+		return
 	fi
+
+	warn "Warning: your rubygems version (${_color_red}$gem_version${_color_yellow}) is old this might cause issues while installing gems"
+	warn "         if you have trouble installing gems you can try running this command:"
+	warn ""
+	warn "  ${_color_WHITE}gem update --system $WANTED_RUBYGEMS_VERSION"
+	warn ""
 }
 
 function activerecord_connect_sqlite3() {
