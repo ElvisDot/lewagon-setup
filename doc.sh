@@ -562,8 +562,9 @@ function check_user_windows() {
 	exit 1
 }
 
-function _check_brew_dir_permissions() {
-	local dir="$1"
+function _check_dir_permissions() {
+	local name="$1"
+	local dir="$2"
 	local dirs
 
 	[ -d "$dir" ] || return
@@ -573,10 +574,10 @@ function _check_brew_dir_permissions() {
 
 	if [ "$arg_fix" = 1 ]
 	then
-		sudo chown -R "$USER" "$HOMEBREW_REPOSITORY"
+		sudo chown -R "$USER" "$dir"
 	else
-		printf '\n'
-		warn "Warning: some homebrew directories are not owned by you ($USER)"
+		[ "$arg_verbose" -gt 0 ] && printf '\n'
+		warn "Warning: some $name directories are not owned by you ($USER)"
 		if [ "$arg_verbose" -gt 0 ]
 		then
 			warn ""
@@ -585,9 +586,10 @@ function _check_brew_dir_permissions() {
 		fi
 		warn "         you can set the permissions by running this command:"
 		warn ""
-		warn "           ${_color_WHITE}sudo chown -R $USER $HOMEBREW_REPOSITORY"
+		warn "           ${_color_WHITE}sudo chown -R $USER $dir"
 		warn ""
 		warn "         or run the doctor with $_color_WHITE--fix"
+		warn ""
 		return 1
 	fi
 	return 0
@@ -598,8 +600,19 @@ function check_brew_permissions() {
 
 	local ok=1
 
-	_check_brew_dir_permissions "$HOMEBREW_REPOSITORY" || ok=0
-	_check_brew_dir_permissions /usr/local/var/homebrew || ok=0
+	_check_dir_permissions homebrew "$HOMEBREW_REPOSITORY" || ok=0
+	_check_dir_permissions homebrew /usr/local/var/homebrew || ok=0
+
+	[ "$ok" = 1 ] && dbg_echo "${_color_GREEN}OK"
+}
+
+function check_local_ruby_dirs_permissions() {
+	dbg -n "checking local ruby directory permissions ..."
+
+	local ok=1
+
+	_check_dir_permissions rbenv ~/.rbenv || ok=0
+	_check_dir_permissions ruby ~/.local/share/gem || ok=0
 
 	[ "$ok" = 1 ] && dbg_echo "${_color_GREEN}OK"
 }
@@ -4820,6 +4833,7 @@ function main() {
 	then
 		check_vscode_extensions_web
 		check_ruby
+		check_local_ruby_dirs_permissions
 		check_rubygems_version
 		check_activerecord
 		check_rvm
