@@ -4708,8 +4708,21 @@ function sqlite3_gem_v2() {
 	gem list sqlite3 | grep -oE '[^0-9]2\.[0-9]+\.[0-9]' | cut -c2- | head -n1
 }
 
+function is_gem_installed() {
+	local gem="$1"
+	if gem list "$gem" | grep -q "$gem"
+	then
+		return 0
+	fi
+	return 1
+}
+
 function check_activerecord() {
 	dbg "checking activerecord ..."
+
+	is_gem_installed sqlite3 || return
+	is_gem_installed active_record || return
+
 	if ! activerecord_connect_sqlite3 &>/dev/null
 	then
 		if [ "$arg_verbose" -gt 0 ]
