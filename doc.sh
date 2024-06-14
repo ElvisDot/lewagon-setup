@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1717433723
+LAST_DOC_UPDATE=1718328580
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -99,6 +99,7 @@ function is_doc_deprecated() {
 
 UNAME_MACHINE="unkown"
 HOMEBREW_PREFIX="/usr/local"
+HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
 if [ -f /usr/bin/uname ]
 then
 	UNAME_MACHINE="unkown"
@@ -110,11 +111,11 @@ else
 	then
 		# On ARM macOS, this script installs to /opt/homebrew only
 		HOMEBREW_PREFIX="/opt/homebrew"
-		# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
+		HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
 	else
 		# On Intel macOS, this script installs to /usr/local only
 		HOMEBREW_PREFIX="/usr/local"
-		# HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
+		HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
 	fi
 fi
 
@@ -561,7 +562,53 @@ function check_user_windows() {
 	exit 1
 }
 
+function _check_brew_dir_permissions() {
+	local dir="$1"
+	local dirs
+
+	[ -d "$dir" ] || return
+
+	dirs="$(find "$dir" ! -user "$USER" -type d)"
+	[ "$dirs" = "" ] && return
+
+	if [ "$arg_fix" = 1 ]
+	then
+		sudo chown -R "$USER" "$HOMEBREW_REPOSITORY"
+	else
+		printf '\n'
+		warn "Warning: some homebrew directories are not owned by you ($USER)"
+		if [ "$arg_verbose" -gt 0 ]
+		then
+			warn ""
+			warn "         ${_color_RED}$dirs"
+			warn ""
+		fi
+		warn "         you can set the permissions by running this command:"
+		warn ""
+		warn "           ${_color_WHITE}sudo chown -R $USER $HOMEBREW_REPOSITORY"
+		warn ""
+		warn "         or run the doctor with $_color_WHITE--fix"
+		return 1
+	fi
+	return 0
+}
+
+function check_brew_permissions() {
+	dbg -n "checking homebrew permissions ..."
+
+	local ok=1
+
+	_check_brew_dir_permissions "$HOMEBREW_REPOSITORY" || ok=0
+	_check_brew_dir_permissions /usr/local/var/homebrew || ok=0
+
+	[ "$ok" = 1 ] && dbg_echo "${_color_GREEN}OK"
+}
+
 function check_brew() {
+	dbg "checking homebrew ..."
+
+	check_brew_permissions
+
 	if [ -x "$(command -v brew)" ]
 	then
 		# brew found in path all good
