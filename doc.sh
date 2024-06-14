@@ -569,6 +569,13 @@ function _check_dir_permissions() {
 
 	[ -d "$dir" ] || return
 
+	if [ "$USER" = "root" ]
+	then
+		warn "Warning: can not check directory permissions when running as root"
+		warn "         please do not run the doctor with sudo"
+		return 1
+	fi
+
 	dirs="$(find "$dir" ! -user "$USER" -type d)"
 	[ "$dirs" = "" ] && return
 
