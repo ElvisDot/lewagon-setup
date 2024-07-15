@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1718328580
+LAST_DOC_UPDATE=1721036531
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3403,6 +3403,11 @@ function check_rails_version() {
 	dbg "checking rails version ..."
 	if [ ! -x "$(command -v rails)" ]
 	then
+		return
+	fi
+	if [ ! -x "$(command -v gem)" ]
+	then
+		warn "Warning: gem command not found! Is your ruby installed correctly?"
 		return
 	fi
 	# does not work in bash 3
