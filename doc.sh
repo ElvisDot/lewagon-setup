@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1728270714
+LAST_DOC_UPDATE=1728295275
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -4790,6 +4790,8 @@ function check_activerecord() {
 }
 
 function check_hosts() {
+	dbg "checking /etc/hosts ..."
+
 	# postgres on macos needs localhost in /etc/hosts to start
 	if [ ! -f /etc/hosts ]
 	then
