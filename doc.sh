@@ -1473,11 +1473,6 @@ function install_rbenv() {
 		warn "Warning: please install rbenv or run the doctor with $_color_WHITE--fix"
 		return
 	fi
-	if [ "$arg_course" != "web" ]
-	then
-		# todo: is silent fail nice?
-		return
-	fi
 
 	if is_linux || is_windows
 	then
