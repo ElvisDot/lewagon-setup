@@ -4789,6 +4789,40 @@ function check_activerecord() {
 	fi
 }
 
+function check_hosts() {
+	# postgres on macos needs localhost in /etc/hosts to start
+	if [ ! -f /etc/hosts ]
+	then
+		error "Error: /etc/hosts not found"
+		return
+	fi
+	if ! grep -q 'localhost' /etc/hosts
+	then
+		if [ "$arg_fix" = "1" ]
+		then
+			log "Adding localhost to /etc/hosts"
+			printf '127.0.0.1       localhost\n' | sudo tee -a /etc/hosts
+		else
+			error "Error: localhost not found in /etc/hosts you can add it"
+			error "       using this command or run the doctor with $_color_WHITE--fix"
+			error ""
+			error "         ${_color_WHITE}printf '127.0.0.1       localhost\\\n' | sudo tee -a /etc/hosts"
+			error ""
+		fi
+		return
+	fi
+
+	# this branch will be reached when localhost is in /etc/host
+	# but it could still be set to a wrong ip or commented out
+	# so instead of complicated regex we just ping
+
+	if ! ping localhost -c1 -W1 > /dev/null
+	then
+		warn "Warning: failed to ping localhost. This might not be an issue but it is weird."
+		warn "         check your /etc/hosts file"
+	fi
+}
+
 function main() {
 	check_colors
 	device_info
@@ -4804,6 +4838,7 @@ function main() {
 	then
 		check_windows_anti_virus
 	fi
+	check_hosts
 	check_vscode
 	detect_bootcamp
 	# check_path_overwritten
