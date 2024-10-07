@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1728213716
+LAST_DOC_UPDATE=1728270714
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -620,6 +620,7 @@ function check_local_ruby_dirs_permissions() {
 
 	_check_dir_permissions rbenv ~/.rbenv || ok=0
 	_check_dir_permissions ruby ~/.local/share/gem || ok=0
+	_check_dir_permissions ruby ~/.cache || ok=0
 
 	[ "$ok" = 1 ] && dbg_echo "${_color_GREEN}OK"
 }
