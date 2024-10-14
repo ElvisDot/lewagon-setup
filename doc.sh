@@ -3319,9 +3319,14 @@ function check_disk_space() {
 	if [[ "$avail" =~ ^[0-9]+M$ ]] || [[ "$avail" =~ ^[0-9]+K$ ]]
 	then
 		_warn_disk "Warning: detected too little free disk space $avail"
+	elif echo "$avail" | grep -Eq '^([0-9\.]+)Ti$'
+	then
+		true
+		# local avail_tb
+		# avail_tb="$(echo "$avail" | grep -Eo '^([0-9]+)Ti?$' | cut -d'T' -f1)"
 	# does not work in bash 3
 	# elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
-	elif echo "$avail" | grep -Eq '^([0-9]+)Gi?$'
+	elif echo "$avail" | grep -Eq '^([0-9]+)Gi$'
 	then
 		local avail_gb
 		# avail_gb="${BASH_REMATCH[1]}"
