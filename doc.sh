@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1728295275
+LAST_DOC_UPDATE=1728888804
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3304,13 +3304,13 @@ function check_disk_space() {
 	local avail
 	if is_mac
 	then
-		if ! avail="$(df -h /System/Volumes/Data | awk '{ print $4 }' | tail -n1)"
+		if ! avail="$(df -h /System/Volumes/Data | grep '/System/Volumes/Data$' | awk '{ print $4 }' | tail -n1)"
 		then
 			_warn_disk "Warning: failed to get free disk space"
 			return
 		fi
 	else
-		if ! avail="$(df -h 2>/dev/null | grep ' /$' | awk '{ print $4 }')"
+		if ! avail="$(df -h 2>/dev/null | grep ' /$' | awk '{ print $4 }' | tail -n1)"
 		then
 			_warn_disk "Warning: failed to get free disk space"
 			return
