@@ -37,7 +37,7 @@ arg_fix=0
 arg_course=""
 arg_unix_name=""
 
-bootcamp=unkown
+bootcamp=unknown
 
 num_warnings=0
 num_errors=0
@@ -97,12 +97,12 @@ function is_doc_deprecated() {
 	return 1
 }
 
-UNAME_MACHINE="unkown"
+UNAME_MACHINE="unknown"
 HOMEBREW_PREFIX="/usr/local"
 HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
 if [ -f /usr/bin/uname ]
 then
-	UNAME_MACHINE="unkown"
+	UNAME_MACHINE="unknown"
 else
 	# straight copy from the homebrew install script
 	# https://github.com/Homebrew/install/blob/95648ef45c8d59a44fa4ab8f29cdcf17d6ec48ac/install.sh#L127-L138
@@ -236,12 +236,12 @@ function parse_args() {
 					show_help
 					exit 0
 				else
-					echo "Error: unkown flag '$flag'"
+					echo "Error: unknown flag '$flag'"
 					exit 1
 				fi
 			done < <(echo -n "$flags")
 		else
-			echo "Error: unkown argument '$arg'"
+			echo "Error: unknown argument '$arg'"
 			exit 1
 		fi
 	done
