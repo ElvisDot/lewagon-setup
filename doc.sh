@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1728888804
+LAST_DOC_UPDATE=1730688065
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3326,7 +3326,7 @@ function check_disk_space() {
 		# avail_tb="$(echo "$avail" | grep -Eo '^([0-9]+)Ti?$' | cut -d'T' -f1)"
 	# does not work in bash 3
 	# elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
-	elif echo "$avail" | grep -Eq '^([0-9]+)Gi$'
+	elif echo "$avail" | grep -Eq '^([0-9]+)Gi?$'
 	then
 		local avail_gb
 		# avail_gb="${BASH_REMATCH[1]}"
