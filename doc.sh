@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1730688065
+LAST_DOC_UPDATE=1732159716
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3834,8 +3834,8 @@ function check_git_init_in_fullstack_challenges() {
 	fi
 }
 
-function check_c_compiler() {
-	dbg "checking C compiler ..."
+function check_c_compiler_in_path() {
+	dbg "checking C compiler in PATH ..."
 	# TODO: test this. I just assumed this works.
 	if is_mac && (clang++;clang;g++;gcc) 2>&1 | grep -q "missing xcrun"
 	then
@@ -3844,20 +3844,93 @@ function check_c_compiler() {
 		error ""
 		error "       ${_color_WHITE}xcode-select --install"
 		error ""
-		return
+		return 1
 	fi
 	if g++ 2>&1 | grep -q "no input files" && gcc 2>&1 | grep -q "no input files"
 	then
-		return
+		return 0
 	fi
 	if clang++ 2>&1 | grep -q "no input files" && clang 2>&1 | grep -q "no input files"
 	then
-		return
+		return 0
 	fi
 	if is_web
 	then
 		sudo apt-get install -y build-essential tklib zlib1g-dev libssl-dev libffi-dev libxml2 libxml2-dev libxslt1-dev libreadline-dev
 	fi
+	return 1
+}
+
+function check_cxx_compiler_working() {
+	dbg "checking C++ compiler working ..."
+
+	local tmp_cxx_src
+	local tmp_cxx_bin
+	if ! tmp_cxx_src="$(mktemp /tmp/lewagon_doctor_XXXXXXX.cpp)"
+	then
+		error "Error: failed to use mktemp"
+		return
+	fi
+	if ! tmp_cxx_bin="$(mktemp /tmp/lewagon_doctor_XXXXXXX.out)"
+	then
+		error "Error: failed to use mktemp"
+		return
+	fi
+
+	cat <<- EOF > "$tmp_cxx_src"
+	#include <string>
+	#include <iostream>
+
+	int main() {
+		std::string f = "foo";
+		std::cout << f << '\n';
+	}
+	EOF
+
+	local cxx_compiler='g++'
+	if g++ 2>&1 | grep -q "no input files" && gcc 2>&1 | grep -q "no input files"
+	then
+		cxx_compiler='g++'
+	fi
+	if clang++ 2>&1 | grep -q "no input files" && clang 2>&1 | grep -q "no input files"
+	then
+		cxx_compiler='clang++'
+	fi
+
+	if ! "$cxx_compiler" "$tmp_cxx_src" -o "$tmp_cxx_bin"
+	then
+		error "Error: $cxx_compiler is not able to compile sample program"
+		cxx_error=1
+	fi
+	local cxx_error=0
+	local output
+	if ! output="$("$tmp_cxx_bin")"
+	then
+		error "Error: failed to run sample c++ program"
+		cxx_error=1
+	fi
+
+	if [ "$output" != "foo" ]
+	then
+		error "Error: unexpected output '$output' when compiling sample program"
+		cxx_error=1
+	fi
+
+	if [ "$cxx_error" = 1 ]
+	then
+		if is_mac
+		then
+			error "       you can try to reinstall your developer tools"
+			error "       to fix the compiler using these two commands"
+			error ""
+			error "  ${_color_WHITE}sudo rm -rf /Library/Developer/CommandLineTools"
+			error "  ${_color_WHITE}xcode-select --install"
+			error ""
+		fi
+	fi
+
+	rm "$tmp_cxx_src"
+	rm "$tmp_cxx_bin"
 }
 
 function check_locale() {
@@ -4874,7 +4947,10 @@ function main() {
 	check_git_repos_merging
 	check_zshrc_contents
 	check_zprofile_contents
-	check_c_compiler
+	if check_c_compiler_in_path
+	then
+		check_cxx_compiler_working
+	fi
 	check_locale
 	check_browser_env
 	check_ohmyzsh
