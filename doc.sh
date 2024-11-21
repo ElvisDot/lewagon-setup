@@ -3897,24 +3897,33 @@ function check_cxx_compiler_working() {
 		cxx_compiler='clang++'
 	fi
 
-	if ! "$cxx_compiler" "$tmp_cxx_src" -o "$tmp_cxx_bin"
-	then
-		error "Error: $cxx_compiler is not able to compile sample program"
-		cxx_error=1
-	fi
 	local cxx_error=0
-	local output
-	if ! output="$("$tmp_cxx_bin")"
-	then
-		error "Error: failed to run sample c++ program"
-		cxx_error=1
-	fi
 
-	if [ "$output" != "foo" ]
-	then
-		error "Error: unexpected output '$output' when compiling sample program"
-		cxx_error=1
-	fi
+	# use "break" as "goto"
+	while true
+	do
+		if ! "$cxx_compiler" "$tmp_cxx_src" -o "$tmp_cxx_bin"
+		then
+			error "Error: $cxx_compiler is not able to compile sample program"
+			cxx_error=1
+			break
+		fi
+		local output
+		if ! output="$("$tmp_cxx_bin")"
+		then
+			error "Error: failed to run sample c++ program"
+			cxx_error=1
+			break
+		fi
+
+		if [ "$output" != "foo" ]
+		then
+			error "Error: unexpected output '$output' when compiling sample program"
+			cxx_error=1
+			break
+		fi
+		break
+	done
 
 	if [ "$cxx_error" = 1 ]
 	then
