@@ -2717,6 +2717,20 @@ function check_postgres_extensions() {
 
 	if [ ! -f "$pgxs" ]
 	then
+		# this can happen on macos when there is a pg_config command in the PATH
+		# that was added by a postgres version that is now uninstalled
+		# maybe this is brew not cleaning up all binaries on uninstall
+		# and then refusing to overwrite on the next install
+		#
+		# not sure how exactly it can happen but i saw it twice
+		# this can be fixed with:
+		#
+		#  sudo rm $(which pg_config)
+		#
+		# and then reinstalling postgres with brew
+		# or by using the brew --force --overwrite flags
+		# or using the command brew prints to place the newly installed postgres
+		# binaries in the front of the PATH
 		warn "Warning: pg_config --pgxs points to a file that does not exist"
 		warn "         it seems like your postgres installation is corrupt"
 		if ! grep "$WANTED_POSTGRES_VERSION" "$pgxs"
