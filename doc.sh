@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1732159716
+LAST_DOC_UPDATE=1732718711
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -2653,10 +2653,85 @@ function show_postgres_pids_macos() {
 	done
 }
 
+function check_postgres_extensions() {
+	dbg "checking postgres extensions ..."
+	if [ ! -x "$(command -v pg_config)" ]
+	then
+		# assume postgres is not installed then that is not an issue
+		return
+	fi
+	# old intel mac:
+	# $ pg_config --version
+	# PostgreSQL 15.10 (Homebrew)
+	# $ type -a pg_config
+	# pg_config is /usr/local/opt/postgresql@15/bin/pg_config
+	# $ pg_config --pgxs
+	# /usr/local/opt/postgresql@15/lib/postgresql/pgxs/src/makefiles/pgxs.mk
+	#
+	# debian:
+	# $ pg_config --version
+	# PostgreSQL 15.8 (Debian 15.8-0+deb12u1)
+	# $ type -a pg_config
+	# pg_config is /usr/bin/pg_config
+	# pg_config is /bin/pg_confi
+	# $ pg_config --pgxs
+	# /usr/lib/postgresql/15/lib/pgxs/src/makefiles/pgxs.mk
+
+	pg_config_version=''
+	if ! pg_config_version="$(pg_config --version)"
+	then
+		warn "Warning: failed to run $_color_WHITE pg_config --version"
+		return
+	fi
+
+	if ! pg_config_major_version="$(printf '%s' "$pg_config_version" | grep -Eo 'PostgreSQL [0-9]+' | cut -d' ' -f2)"
+	then
+		warn "Warning: failed to parse pg_config version '$pg_config_version'"
+		warn "         this is probably an issue with the doctor"
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+
+	if [ "$pg_config_major_version" -lt "$WANTED_POSTGRES_VERSION" ]
+	then
+		warn "Warning: your pg_config version is $pg_config_major_version but it should be at least $WANTED_POSTGRES_VERSION"
+		warn "         please update your postgres and make sure the latest version is installed in the PATH"
+		if is_mac
+		then
+			warn ""
+			warn "  ${_color_WHITE}brew install postgresql@$WANTED_POSTGRES_VERSION"
+			warn ""
+		fi
+		return
+	fi
+
+	if ! pgxs="$(pg_config --pgxs)"
+	then
+		warn "Warning: failed to run pg_config --pgxs"
+		warn "         this is probably an issue with the doctor"
+		warn "         please report this issue here"
+		warn "         https://github.com/ElvisDot/lewagon-setup/issues"
+		return
+	fi
+
+	if [ ! -f "$pgxs" ]
+	then
+		warn "Warning: pg_config --pgxs points to a file that does not exist"
+		warn "         it seems like your postgres installation is corrupt"
+		if ! grep "$WANTED_POSTGRES_VERSION" "$pgxs"
+		then
+			warn "         expected '$pgxs'"
+			warn "         to contain the version number $WANTED_POSTGRES_VERSION"
+		fi
+	fi
+}
+
 function check_database() {
 	dbg "checking database ..."
 	# TODO: persist postgres start command on wsl in zshrc
 	check_postgres_and_sqlite_installed
+	check_postgres_extensions
 	if is_mac
 	then
 		check_postgres_running_mac
