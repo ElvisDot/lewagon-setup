@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1732718711
+LAST_DOC_UPDATE=1736680526
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3386,7 +3386,7 @@ function check_disk_space() {
 
 	_warn_disk() {
 		[ "$_is_warn_disk" = "0" ] && printf '\n'
-		warn "Warning: failed to get free disk space"
+		warn "$1"
 		_is_warn_disk=1
 	}
 
@@ -3413,13 +3413,12 @@ function check_disk_space() {
 		true
 		# local avail_tb
 		# avail_tb="$(echo "$avail" | grep -Eo '^([0-9]+)Ti?$' | cut -d'T' -f1)"
-	# does not work in bash 3
-	# elif [[ "$avail" =~ ^([0-9]+)Gi?$ ]]
-	elif echo "$avail" | grep -Eq '^([0-9]+)Gi?$'
+	elif echo "$avail" | grep -Eq '^([0-9]+)(\.[0-9]+)?Gi?$'
 	then
 		local avail_gb
-		# avail_gb="${BASH_REMATCH[1]}"
-		avail_gb="$(echo "$avail" | grep -Eo '^([0-9]+)Gi?$' | cut -d'G' -f1)"
+		avail_gb="$(echo "$avail" | grep -Eo '^([0-9]+)(\.[0-9]+)?Gi?$' | cut -d'G' -f1)"
+		# if it says "3.2G" we only care about "3"
+		avail_gb="$(echo "$avail_gb" | cut -d'.' -f1)"
 		if [ "$avail_gb" -lt "$MIN_DISK_SPACE_GB" ]
 		then
 			_warn_disk "Warning: you only seem to have $avail_gb GB free disk space"
