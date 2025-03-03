@@ -4045,6 +4045,17 @@ function check_ruby_cxx_config() {
 		return 1
 	fi
 
+	local rb_config
+	if ! rb_config="$(find ~/.rbenv -name rbconfig.rb | grep -F "$WANTED_RUBY_VERSION")"
+	then
+		warn "Warning: failed to find rbconfig.rb"
+	fi
+	if [ "$(echo "$rb_config" | wc -l)" -gt 1 ]
+	then
+		# could not guess which of the ruby configs is the relevant one
+		rb_config=''
+	fi
+
 	if [ "$cxx_compiler" = "g++" ] || [ "$cxx_compiler" = "clang++" ]
 	then
 		if "$cxx_compiler" 2>&1 | grep -q "no input files" && "$cxx_compiler" 2>&1 | grep -q "no input files"
@@ -4061,9 +4072,16 @@ function check_ruby_cxx_config() {
 		warn "Warning: no CXX compiler set in your ruby config"
 		warn "         edit your rbconfig.rb to set CXX to clang++"
 		warn "         also make sure you have clang installed"
-		warn "         you can find your rbconfig.rb using this command"
-		warn ""
-		warn "  ${_color_WHITE}find ~/.rbenv -name rbconfig.rb"
+		if [ "$rb_config" = "" ]
+		then
+			warn "         you can find your rbconfig.rb using this command"
+			warn ""
+			warn "  ${_color_WHITE}find ~/.rbenv -name rbconfig.rb | grep -F $WANTED_RUBY_VERSION"
+		else
+			warn "         you can edit your rbconfig.rb using this command"
+			warn ""
+			warn "  ${_color_WHITE}code $rb_config"
+		fi
 		warn ""
 		return 1
 	else
