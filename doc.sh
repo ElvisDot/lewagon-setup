@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1736680526
+LAST_DOC_UPDATE=1741020638
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -1735,13 +1735,13 @@ function check_ruby() {
 		install_rbenv
 		if [ ! -x "$(command -v rbenv)" ]
 		then
-			return
+			return 1
 		fi
 	fi
 	if [ ! -x "$(command -v ruby)" ]
 	then
 		install_ruby
-		return
+		return 0
 	fi
 	if [[ ! "$(command -v ruby)" =~ shims ]]
 	then
@@ -1779,8 +1779,10 @@ function check_ruby() {
 			warn ""
 			warn "         ${_color_WHITE}rbenv install $(wanted_ruby_version)"
 			warn "         ${_color_WHITE}rbenv global $(wanted_ruby_version)"
+			return 1
 		fi
 	fi
+	return 0
 }
 
 function get_code_user_dir() {
@@ -4030,6 +4032,48 @@ function check_cxx_compiler_working() {
 	rm "$tmp_cxx_bin"
 }
 
+function check_ruby_cxx_config() {
+	dbg "checking ruby CXX config ..."
+
+	# this can show the root cause of
+	# sassc gem not compiling on macs
+
+	local cxx_compiler
+	if ! cxx_compiler="$(ruby -rrbconfig -e 'puts RbConfig::CONFIG["CXX"]')"
+	then
+		warn "Warning: failed to get CXX compiler from ruby config"
+		return 1
+	fi
+
+	if [ "$cxx_compiler" = "g++" ] || [ "$cxx_compiler" = "clang++" ]
+	then
+		if "$cxx_compiler" 2>&1 | grep -q "no input files" && "$cxx_compiler" 2>&1 | grep -q "no input files"
+		then
+			dbg "found ruby config CXX compiler $cxx_compiler and it is in PATH"
+		else
+			warn "Warning: the CXX compiler in your ruby config seems to be"
+			warn "         ${_color_WHITE}$cxx_compiler"
+			warn "         but it does not look like it is working"
+			return 1
+		fi
+	elif [ "$cxx_compiler" = "" ] || [ "$cxx_compiler" = "false" ] # we use puts so it covers "", nil, "false" and false
+	then
+		warn "Warning: no CXX compiler set in your ruby config"
+		warn "         edit your rbconfig.rb to set CXX to clang++"
+		warn "         also make sure you have clang installed"
+		warn "         you can find your rbconfig.rb using this command"
+		warn ""
+		warn "  ${_color_WHITE}find ~/.rbenv -name rbconfig.rb"
+		warn ""
+		return 1
+	else
+		warn "Warning: unusual CXX compiler '${_color_RED}$cxx_compiler${_color_yellow}' set in your ruby config"
+		return 1
+	fi
+
+	return 0
+}
+
 function check_locale() {
 	dbg "checking locale ..."
 	if ! locale 2>&1 | grep -q "No such file or directory"
@@ -5055,7 +5099,10 @@ function main() {
 	if is_web
 	then
 		check_vscode_extensions_web
-		check_ruby
+		if check_ruby
+		then
+			check_ruby_cxx_config
+		fi
 		check_local_ruby_dirs_permissions
 		check_rubygems_version
 		check_activerecord
