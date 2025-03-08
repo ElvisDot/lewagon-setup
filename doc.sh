@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1741020638
+LAST_DOC_UPDATE=1741460388
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -4218,18 +4218,20 @@ function check_jupyter_config() {
 		warn ""
 		return
 	fi
-	if ! grep -q '^c.NotebookApp.use_redirect_file = False' "$py_cfg"
-	then
-		warn "Warning: did not find redirect being set to false in your jupyter config"
-		warn "         make sure to add the following line to the file:"
-		warn ""
-		warn "           ${_color_green}c.NotebookApp.use_redirect_file = False"
-		warn ""
-		warn "         edit the file with the following command"
-		warn ""
-		warn "           ${_color_WHITE}code $py_cfg"
-		warn ""
-	fi
+	# uncomment once new setup got rolled out
+	# https://github.com/ElvisDot/lewagon-setup/issues/31
+	# if ! grep -q '^c.ServerApp.use_redirect_file = False' "$py_cfg"
+	# then
+	# 	warn "Warning: did not find redirect being set to false in your jupyter config"
+	# 	warn "         make sure to add the following line to the file:"
+	# 	warn ""
+	# 	warn "           ${_color_green}c.ServerApp.use_redirect_file = False"
+	# 	warn ""
+	# 	warn "         edit the file with the following command"
+	# 	warn ""
+	# 	warn "           ${_color_WHITE}code $py_cfg"
+	# 	warn ""
+	# fi
 }
 
 function check_dotfiles_version() {
