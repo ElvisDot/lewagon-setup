@@ -1,5 +1,5 @@
 # lewagon-setup
-The unoffical LeWagon setup doctor. A script that shows and fixes setup issues.
+The unoffical Le Wagon setup doctor. A script that shows and fixes setup issues.
 
 ## Web
 

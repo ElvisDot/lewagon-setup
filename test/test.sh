@@ -21,7 +21,7 @@ fi
 
 read -r -d '' expected_logs <<'EOF'
 [!] Warning: no ~/.ssh/config found
-[-] Error: no LeWagon ssh key found
+[-] Error: no Le Wagon ssh key found
 [-]        try running this command
 [-]
 [-]        gh auth login

@@ -386,7 +386,7 @@ function check_ssl() {
 
 function fail_if_no_internet() {
 	local ip
-	# Even the stable LeWagon munich office had a hiccup for 8.8.8.8
+	# Even the stable Le Wagon munich office had a hiccup for 8.8.8.8
 	# So give it some attempts
 	local ips=(8.8.8.8 8.8.4.4 1.1.1.1)
 	for ip in "${ips[@]}"
@@ -2158,7 +2158,7 @@ function check_github_access() {
 	if [ ! -f ~/.ssh/id_ed25519 ]
 	then
 		# todo: do we do a gh auth login here or a ssh-keygen?
-		error "Error: no LeWagon ssh key found"
+		error "Error: no Le Wagon ssh key found"
 		error "       try running this command"
 		error ""
 		error "       ${_color_WHITE}gh auth login"
