@@ -4218,20 +4218,18 @@ function check_jupyter_config() {
 		warn ""
 		return
 	fi
-	# uncomment once new setup got rolled out
-	# https://github.com/ElvisDot/lewagon-setup/issues/31
-	# if ! grep -q '^c.ServerApp.use_redirect_file = False' "$py_cfg"
-	# then
-	# 	warn "Warning: did not find redirect being set to false in your jupyter config"
-	# 	warn "         make sure to add the following line to the file:"
-	# 	warn ""
-	# 	warn "           ${_color_green}c.ServerApp.use_redirect_file = False"
-	# 	warn ""
-	# 	warn "         edit the file with the following command"
-	# 	warn ""
-	# 	warn "           ${_color_WHITE}code $py_cfg"
-	# 	warn ""
-	# fi
+	if ! grep -q '^c.ServerApp.use_redirect_file = False' "$py_cfg"
+	then
+		warn "Warning: did not find redirect being set to false in your jupyter config"
+		warn "         make sure to add the following line to the file:"
+		warn ""
+		warn "           ${_color_green}c.ServerApp.use_redirect_file = False"
+		warn ""
+		warn "         edit the file with the following command"
+		warn ""
+		warn "           ${_color_WHITE}sed -i.backup 's/# c.ServerApp.use_redirect_file = True/c.ServerApp.use_redirect_file = False/' $py_cfg"
+		warn ""
+	fi
 }
 
 function check_dotfiles_version() {
