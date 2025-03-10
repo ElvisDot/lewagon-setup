@@ -58,14 +58,14 @@ WANTED_WSL_VERSION=2
 WANTED_POSTGRES_VERSION=15
 WANTED_NODE_VERSION='20.17.0'
 WANTED_RUBY_VERSION='3.3.5'
-WANTED_PYTHON_VERSION='3.10.6'
+WANTED_PYTHON_VERSION='3.12.9'
 WANTED_DOTFILES_SHA='54a90f9e10820581622dde2431623785394ad88c'
 # bash arrays would be nicer code but spaced strings are POSIX
 WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscode-great-icons github.github-vscode-theme MS-vsliveshare.vsliveshare rebornix.ruby dbaeumer.vscode-eslint Rubymaniac.vscode-paste-and-indent alexcvzz.vscode-sqlite anteprimorac.html-end-tag-labels"
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1741460388
+LAST_DOC_UPDATE=1741614773
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
