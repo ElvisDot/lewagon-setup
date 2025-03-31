@@ -65,7 +65,7 @@ WANTED_VSCODE_EXTENSIONS_WEB="ms-vscode.sublime-keybindings emmanuelbeziat.vscod
 
 # unix ts generated using date '+%s'
 # update it using ./scripts/update.sh
-LAST_DOC_UPDATE=1741614773
+LAST_DOC_UPDATE=1743423947
 MAX_DOC_AGE=300
 
 is_dotfiles_old=0
@@ -3154,6 +3154,8 @@ function check_zshrc_contents() {
 						warn "Warning: /etc/init.d/postgresql file not found"
 					else
 						log "adding postgres start to zshrc"
+						sudo echo "`whoami` ALL=NOPASSWD:/etc/init.d/postgresql start" | sudo tee /etc/sudoers.d/postgresql
+						sudo chmod 440 /etc/sudoers.d/postgresql
 						echo "sudo /etc/init.d/postgresql start" >> ~/.zshrc
 					fi
 				else
