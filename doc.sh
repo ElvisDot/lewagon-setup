@@ -3154,7 +3154,7 @@ function check_zshrc_contents() {
 						warn "Warning: /etc/init.d/postgresql file not found"
 					else
 						log "adding postgres start to zshrc"
-						sudo echo "`whoami` ALL=NOPASSWD:/etc/init.d/postgresql start" | sudo tee /etc/sudoers.d/postgresql
+						sudo echo "$(whoami) ALL=NOPASSWD:/etc/init.d/postgresql start" | sudo tee /etc/sudoers.d/postgresql
 						sudo chmod 440 /etc/sudoers.d/postgresql
 						echo "sudo /etc/init.d/postgresql start" >> ~/.zshrc
 					fi
