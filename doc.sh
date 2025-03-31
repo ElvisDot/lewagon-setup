@@ -4970,6 +4970,16 @@ function sqlite3_gem_v2() {
 
 function is_gem_installed() {
 	local gem="$1"
+
+	# gem command not found
+	[ ! -x "$(command -v gem)" ] && return 1
+
+	# # gem commmand not coming from rbenv
+	# if ! type -a gem | grep -q rbenv
+	# then
+	# 	return 1
+	# fi
+
 	if gem list "$gem" | grep -q "$gem"
 	then
 		return 0
