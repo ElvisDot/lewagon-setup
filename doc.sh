@@ -4449,17 +4449,8 @@ function check_gh_email_public_and_matching() {
 		return
 	fi
 	local git_email
-	if ! git_email="$(git config --global user.email)"
-	then
-		warn "Warning: failed to get git email"
-		warn "         this is likley an issue with the doctor it self"
-		warn "         please report it here"
-		warn ""
-		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
-		warn ""
-		return
-	fi
-	if [ "$gh_email" = "$git_email" ]
+	git_email="$(git config --global user.email)"
+	if [ "$gh_email" = "$git_email" ] && [ "$git_email" != "" ]
 	then
 		log "Found git email $_color_green$git_email"
 		return
@@ -4545,12 +4536,19 @@ function check_git_email_set() {
 	local git_email
 	if ! git_email="$(git config --global user.email)"
 	then
-		warn "Warning: failed to get git email"
-		warn "         this is likley an issue with the doctor it self"
-		warn "         please report it here"
-		warn ""
-		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
-		warn ""
+		# we expect non zero exit code on empty git email
+		# it is only an actual error if we get a non empty response
+		if [ "$git_email" != "" ]
+		then
+			warn "Warning: failed to get git email"
+			warn "         got value: $git_email"
+			warn ""
+			warn "         this is likley an issue with the doctor it self"
+			warn "         please report it here"
+			warn ""
+			warn "          https://github.com/ElvisDot/lewagon-setup/issues"
+			warn ""
+		fi
 		return 0
 	fi
 
@@ -4567,16 +4565,7 @@ function check_git_email_valid_regex() {
 	dbg "checking git email valid ..."
 
 	local git_email
-	if ! git_email="$(git config --global user.email)"
-	then
-		warn "Warning: failed to get git email"
-		warn "         this is likley an issue with the doctor it self"
-		warn "         please report it here"
-		warn ""
-		warn "          https://github.com/ElvisDot/lewagon-setup/issues"
-		warn ""
-		return 1
-	fi
+	git_email="$(git config --global user.email)"
 
 	[ "$git_email" = "" ] && return
 
